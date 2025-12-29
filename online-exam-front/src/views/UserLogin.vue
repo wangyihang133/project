@@ -1,8 +1,9 @@
 <template>
   <div style="padding: 24px; max-width: 360px; margin: 0 auto">
     <h2>登录</h2>
-    <input v-model="username" placeholder="用户名" style="width: 100%; margin: 8px 0" />
-    <input v-model="password" type="password" placeholder="密码" style="width: 100%; margin: 8px 0" />
+    <input v-model="username" @input="clearError" placeholder="用户名" style="width: 100%; margin: 8px 0" />
+    <input v-model="password" @input="clearError" type="password" placeholder="密码" style="width: 100%; margin: 8px 0" />
+    <div v-if="errorMessage" style="color: #b00020; margin: 8px 0; font-size: 14px">{{ errorMessage }}</div>
     <button @click="login" style="width: 100%; margin-top: 8px">登录</button>
 
     <p style="margin-top: 12px">
@@ -22,6 +23,7 @@ const userStore = useUserStore();
 
 const username = ref("");
 const password = ref("");
+const errorMessage = ref("");
 
 type LoginResp = {
   token: string;
@@ -30,26 +32,37 @@ type LoginResp = {
 };
 
 const login = async () => {
-  // 你后端如果暂时只返回 true/false，可以先按 boolean 处理
-  const res = await http.post<LoginResp | boolean>("/user/login", {
-    username: username.value,
-    password: password.value,
-  });
+  try {
+    errorMessage.value = ''
+    const res = await http.post<LoginResp>('/user/login', {
+      username: username.value,
+      password: password.value,
+    });
 
-  // 兼容两种返回
-  if (typeof res.data === "boolean") {
-    if (!res.data) {
-      alert("登录失败");
-      return;
+    // success
+    errorMessage.value = ''
+    userStore.setLogin(res.data);
+    if (res.data.role === 'STUDENT') router.push('/student');
+    if (res.data.role === 'ADMIN') router.push('/admin');
+    if (res.data.role === 'RECRUIT') router.push('/recruit');
+  } catch (err: any) {
+    // axios error handling
+    const resp = err?.response
+    if (resp) {
+      if (resp.status === 404) {
+        errorMessage.value = '账号不存在'
+        return
+      }
+      if (resp.status === 401) {
+        errorMessage.value = '密码错误'
+        return
+      }
     }
-    alert("登录成功（后端未返回角色/token，后续再补）");
-    router.push("/student");
-    return;
+    errorMessage.value = '登录失败'
   }
+}
 
-  userStore.setLogin(res.data);
-  if (res.data.role === "STUDENT") router.push("/student");
-  if (res.data.role === "ADMIN") router.push("/admin");
-  if (res.data.role === "RECRUIT") router.push("/recruit");
-};
+function clearError() {
+  errorMessage.value = ''
+}
 </script>
