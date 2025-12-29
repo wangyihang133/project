@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:18080', // 这里改成你的后端端口
+        target: 'http://localhost:8080', // 这里改成你的后端端口
         changeOrigin: true,
       },
     },

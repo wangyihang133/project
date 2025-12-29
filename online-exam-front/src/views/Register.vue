@@ -31,7 +31,7 @@ const password = ref("");
 const role = ref<UserRole>("STUDENT");
 
 const register = async () => {
-  const res = await http.post<string>("/api/user/register", {
+  const res = await http.post<string>("/user/register", {
     username: username.value,
     password: password.value,
     role: role.value,

@@ -31,7 +31,7 @@ type LoginResp = {
 
 const login = async () => {
   // 你后端如果暂时只返回 true/false，可以先按 boolean 处理
-  const res = await http.post<LoginResp | boolean>("/api/user/login", {
+  const res = await http.post<LoginResp | boolean>("/user/login", {
     username: username.value,
     password: password.value,
   });
