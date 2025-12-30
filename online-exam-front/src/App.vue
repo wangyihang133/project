@@ -10,7 +10,8 @@ const router = useRouter()
 
 const isLoggedIn = computed(() => !!userStore.token || !!userStore.username)
 const displayName = computed(() => userStore.username || '')
-const isAdmin = computed(() => userStore.role === 'ADMIN' || userStore.role === 'system_admin' || userStore.role === 'recruitment_admin')
+// 只有系统管理员(ADMIN) 才能查看所有用户登录记录、使用管理员筛选功能
+const isAdmin = computed(() => userStore.role === 'ADMIN')
 
 async function logout() {
   try {
