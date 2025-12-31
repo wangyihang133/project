@@ -251,4 +251,22 @@ INSERT INTO `users` VALUES (6, 'testphone_dup', '123456', 'student', '重复手�
 INSERT INTO `users` VALUES (10, 'test_phone', '123456', 'student', NULL, '12345678913', '123@qq.com', '2025-12-31 09:45:11', '2025-12-31 09:45:11');
 INSERT INTO `users` VALUES (11, 'test_phone1', '123456', 'student', NULL, '12345678914', '1234@qq.com', '2025-12-31 09:46:01', '2025-12-31 09:46:01');
 
+-- ----------------------------
+-- Table structure for exams
+-- ----------------------------
+DROP TABLE IF EXISTS `exams`;
+CREATE TABLE `exams` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `exam_name` VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `exam_type` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `exam_time` DATETIME NOT NULL,
+  `exam_major` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `candidate_count` INT NOT NULL DEFAULT 0,
+  `remarks` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+-- Example record (可按需删除)
+INSERT INTO `exams` (`exam_name`, `exam_type`, `exam_time`, `exam_major`, `candidate_count`, `remarks`) VALUES ('2026届招生测试', '笔试', '2026-06-07 09:00:00','计算机科学与技术', 120, '示例备注');
+
 SET FOREIGN_KEY_CHECKS = 1;

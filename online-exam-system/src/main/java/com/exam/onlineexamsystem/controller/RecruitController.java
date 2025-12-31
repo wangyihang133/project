@@ -98,6 +98,97 @@ public class RecruitController {
         return ResponseEntity.ok("OK");
     }
 
+    // -------- exams CRUD（考试设置） --------
+
+    @GetMapping("/exams")
+    public ResponseEntity<?> listExams(@RequestHeader(value = "Authorization", required = false) String auth) {
+        AuthContext ctx = authService.fromAuthHeader(auth);
+        if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
+        String sql = "SELECT id, exam_name, exam_type, exam_time, exam_major, candidate_count, remarks FROM exams ORDER BY exam_time DESC";
+        return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
+    }
+
+    @PostMapping("/exams")
+    public ResponseEntity<?> createExam(@RequestHeader(value = "Authorization", required = false) String auth,
+                                        @RequestBody Map<String, Object> body,
+                                        HttpServletRequest request) {
+        AuthContext ctx = authService.fromAuthHeader(auth);
+        if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
+
+        String examName = body.get("exam_name") == null ? null : body.get("exam_name").toString();
+        String examType = body.get("exam_type") == null ? null : body.get("exam_type").toString();
+        String examTimeStr = body.get("exam_time") == null ? null : body.get("exam_time").toString();
+        String examMajor = body.get("exam_major") == null ? null : body.get("exam_major").toString();
+        Integer candidateCount = body.get("candidate_count") == null ? 0 : Integer.parseInt(body.get("candidate_count").toString());
+        String remarks = body.get("remarks") == null ? null : body.get("remarks").toString();
+
+        if (examName == null || examName.isBlank() || examType == null || examType.isBlank() || examTimeStr == null || examTimeStr.isBlank()) {
+            return ResponseEntity.badRequest().body("INVALID_PAYLOAD");
+        }
+
+        Timestamp examTime;
+        try {
+            // 兼容 "yyyy-MM-dd HH:mm:ss" 或 "yyyy-MM-ddTHH:mm:ss" 两种格式
+            String normalized = examTimeStr.replace('T', ' ');
+            examTime = Timestamp.valueOf(normalized);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("INVALID_EXAM_TIME");
+        }
+
+        jdbcTemplate.update(
+                "INSERT INTO exams (exam_name, exam_type, exam_time, exam_major, candidate_count, remarks) VALUES (?, ?, ?, ?, ?, ?)",
+                examName, examType, examTime, examMajor, candidateCount, remarks
+        );
+        log(ctx.getUserId(), "创建考试: " + examName, request);
+        return ResponseEntity.ok("OK");
+    }
+
+    @PutMapping("/exams/{id}")
+    public ResponseEntity<?> updateExam(@RequestHeader(value = "Authorization", required = false) String auth,
+                                        @PathVariable("id") Long id,
+                                        @RequestBody Map<String, Object> body,
+                                        HttpServletRequest request) {
+        AuthContext ctx = authService.fromAuthHeader(auth);
+        if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
+
+        String examName = body.get("exam_name") == null ? null : body.get("exam_name").toString();
+        String examType = body.get("exam_type") == null ? null : body.get("exam_type").toString();
+        String examTimeStr = body.get("exam_time") == null ? null : body.get("exam_time").toString();
+        String examMajor = body.get("exam_major") == null ? null : body.get("exam_major").toString();
+        Integer candidateCount = body.get("candidate_count") == null ? null : Integer.parseInt(body.get("candidate_count").toString());
+        String remarks = body.get("remarks") == null ? null : body.get("remarks").toString();
+
+        Timestamp examTime = null;
+        if (examTimeStr != null && !examTimeStr.isBlank()) {
+            try {
+                String normalized = examTimeStr.replace('T', ' ');
+                examTime = Timestamp.valueOf(normalized);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("INVALID_EXAM_TIME");
+            }
+        }
+
+        jdbcTemplate.update(
+                "UPDATE exams SET exam_name = COALESCE(?, exam_name), exam_type = COALESCE(?, exam_type), exam_time = COALESCE(?, exam_time), " +
+                        "exam_major = COALESCE(?, exam_major), candidate_count = COALESCE(?, candidate_count), remarks = COALESCE(?, remarks) WHERE id = ?",
+                blankToNull(examName), blankToNull(examType), examTime,
+                blankToNull(examMajor), candidateCount, blankToNull(remarks), id
+        );
+        log(ctx.getUserId(), "修改考试: id=" + id, request);
+        return ResponseEntity.ok("OK");
+    }
+
+    @DeleteMapping("/exams/{id}")
+    public ResponseEntity<?> deleteExam(@RequestHeader(value = "Authorization", required = false) String auth,
+                                        @PathVariable("id") Long id,
+                                        HttpServletRequest request) {
+        AuthContext ctx = authService.fromAuthHeader(auth);
+        if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
+        jdbcTemplate.update("DELETE FROM exams WHERE id = ?", id);
+        log(ctx.getUserId(), "删除考试: id=" + id, request);
+        return ResponseEntity.ok("OK");
+    }
+
     // -------- application confirm --------
 
     @GetMapping("/applications")

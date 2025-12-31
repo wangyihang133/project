@@ -6,11 +6,26 @@ const loading = ref(false);
 const data = ref<any>(null);
 const error = ref("");
 
-async function load() {
+// 查询条件：报名ID + 考试/时间筛选
+const applicationId = ref<string>("");
+const examYear = ref<number | null>(null);
+const examType = ref("");
+const fromDate = ref("");
+const toDate = ref("");
+
+async function query() {
   loading.value = true;
   error.value = "";
   try {
-    const res = await http.get("/student/scores/me");
+    const res = await http.get("/student/scores/query", {
+      params: {
+        applicationId: applicationId.value || undefined,
+        examYear: examYear.value || undefined,
+        examType: examType.value || undefined,
+        fromDate: fromDate.value || undefined,
+        toDate: toDate.value || undefined,
+      },
+    });
     data.value = res.data;
   } catch (e: any) {
     error.value = e?.response?.data || "加载失败";
@@ -19,13 +34,35 @@ async function load() {
   }
 }
 
-onMounted(load);
+onMounted(query);
 </script>
 
 <template>
   <div>
-    <h3>成绩查询</h3>
-    <button @click="load">刷新</button>
+    <h3>成绩查询（按报名ID，可筛选考试和时间）</h3>
+
+    <div
+      style="border:1px solid #eee; border-radius:8px; padding:12px; max-width:720px; margin-bottom:12px"
+    >
+      <div style="font-weight:600; margin-bottom:8px">查询条件</div>
+      <div style="display:grid; grid-template-columns: 120px 1fr; gap:8px; max-width:520px">
+        <div>报名ID</div>
+        <input v-model="applicationId" placeholder="如：在报名记录中看到的ID" />
+
+        <div>考试年份</div>
+        <input v-model.number="examYear" type="number" placeholder="可选" />
+
+        <div>考试类型</div>
+        <input v-model="examType" placeholder="如：自主招生，留空为不限" />
+
+        <div>成绩录入时间从</div>
+        <input v-model="fromDate" type="date" />
+
+        <div>成绩录入时间到</div>
+        <input v-model="toDate" type="date" />
+      </div>
+      <button @click="query" style="margin-top:8px">查询成绩</button>
+    </div>
 
     <div v-if="error" style="color:#b00020; margin-top:8px">{{ error }}</div>
     <div v-if="loading" style="margin-top:8px">加载中...</div>

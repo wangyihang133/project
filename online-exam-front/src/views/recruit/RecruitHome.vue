@@ -13,6 +13,7 @@ const username = computed(() => user.username);
 
     <div style="display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0">
       <router-link to="/recruit/exam-info">招考信息维护</router-link>
+      <router-link to="/recruit/exams">考试设置</router-link>
       <router-link to="/recruit/confirm">现场确认</router-link>
       <router-link to="/recruit/scoreline">设置分数线</router-link>
       <router-link to="/recruit/room-assign">考场分配</router-link>

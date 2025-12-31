@@ -20,6 +20,7 @@ import RecruitConfirm from "../views/recruit/Confirm.vue";
 import RecruitScoreline from "../views/recruit/Scoreline.vue";
 import RecruitRoomAssign from "../views/recruit/RoomAssign.vue";
 import RecruitScoreEntry from "../views/recruit/ScoreEntry.vue";
+import RecruitExams from "../views/recruit/Exams.vue";
 import AdminResetPwd from "../views/admin/ResetPwd.vue";
 
 import { useUserStore } from "../stores/user";
@@ -49,6 +50,7 @@ const router = createRouter({
       children: [
         { path: "", redirect: "/recruit/exam-info" },
         { path: "exam-info", component: RecruitExamInfoMgr },
+        { path: "exams", component: RecruitExams },
         { path: "confirm", component: RecruitConfirm },
         { path: "scoreline", component: RecruitScoreline },
         { path: "room-assign", component: RecruitRoomAssign },
