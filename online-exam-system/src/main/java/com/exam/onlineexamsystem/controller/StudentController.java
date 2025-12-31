@@ -104,33 +104,22 @@ public class StudentController {
 
     @GetMapping("/scores/me")
     public ResponseEntity<?> myScores(@RequestHeader(value = "Authorization", required = false) String auth) {
+
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (ctx == null) return ResponseEntity.status(401).body("UNAUTHORIZED");
 
         Integer studentId = ensureStudent(ctx.getUserId(), null);
-        // latest application
-        Integer appId = null;
-        try {
-            appId = jdbcTemplate.queryForObject(
-                    "SELECT id FROM applications WHERE student_id = ? ORDER BY application_time DESC LIMIT 1",
-                    Integer.class, studentId
-            );
-        } catch (Exception ignored) {}
 
-        if (appId == null) {
-            return ResponseEntity.ok(Map.of("applicationId", null, "scores", List.of(), "total", 0));
-        }
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                "SELECT id, application_id, subject, score, entry_by, entry_time FROM scores WHERE application_id = ? ORDER BY id ASC",
-                appId
-        );
+                "SELECT id, student_id, subject, score, entry_by, entry_time FROM scores WHERE student_id = ? ORDER BY id ASC",
+                studentId);
         double total = 0;
         for (Map<String, Object> r : rows) {
             Object s = r.get("score");
             if (s instanceof Number) total += ((Number) s).doubleValue();
         }
-        return ResponseEntity.ok(Map.of("applicationId", appId, "scores", rows, "total", total));
+        return ResponseEntity.ok(Map.of("applicationId", studentId, "scores", rows, "total", total));
     }
 
     @GetMapping("/admission/me")
