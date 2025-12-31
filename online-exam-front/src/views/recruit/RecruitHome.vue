@@ -17,7 +17,6 @@ const username = computed(() => user.username);
       <router-link to="/recruit/scoreline">设置分数线</router-link>
       <router-link to="/recruit/room-assign">考场分配</router-link>
       <router-link to="/recruit/score-entry">成绩录入</router-link>
-      <router-link to="/recruit/reset-pwd">学生密码重置</router-link>
     </div>
 
     <div style="border-top: 1px solid #eee; padding-top: 12px">

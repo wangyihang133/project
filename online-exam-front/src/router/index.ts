@@ -20,7 +20,7 @@ import RecruitConfirm from "../views/recruit/Confirm.vue";
 import RecruitScoreline from "../views/recruit/Scoreline.vue";
 import RecruitRoomAssign from "../views/recruit/RoomAssign.vue";
 import RecruitScoreEntry from "../views/recruit/ScoreEntry.vue";
-import RecruitResetPwd from "../views/recruit/ResetPwd.vue";
+import AdminResetPwd from "../views/admin/ResetPwd.vue";
 
 import { useUserStore } from "../stores/user";
 
@@ -53,7 +53,7 @@ const router = createRouter({
         { path: "scoreline", component: RecruitScoreline },
         { path: "room-assign", component: RecruitRoomAssign },
         { path: "score-entry", component: RecruitScoreEntry },
-        { path: "reset-pwd", component: RecruitResetPwd },
+        
       ],
     },
 
@@ -65,6 +65,7 @@ const router = createRouter({
         { path: "applications", component: AdminApplications },
         { path: "scores", component: AdminScores },
         { path: "admin-users", component: AdminUsers },
+        { path: "reset-pwd", component: AdminResetPwd },
         { path: "db-maint", component: AdminDbMaint },
       ],
     },

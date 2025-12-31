@@ -15,6 +15,7 @@ const username = computed(() => user.username);
       <router-link to="/admin/applications">报名信息</router-link>
       <router-link to="/admin/scores">成绩信息</router-link>
       <router-link to="/admin/admin-users">管理员维护</router-link>
+      <router-link to="/admin/reset-pwd">学生密码重置</router-link>
       <router-link to="/admin/db-maint">数据库维护</router-link>
     </div>
 
