@@ -238,15 +238,15 @@ public class RecruitController {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
 
-        if (req.getApplicationId() == null || req.getSubject() == null || req.getSubject().isBlank() || req.getScore() == null) {
+        if (req.getStudentId() == null || req.getSubject() == null || req.getSubject().isBlank() || req.getScore() == null) {
             return ResponseEntity.badRequest().body("INVALID_PAYLOAD");
         }
 
         jdbcTemplate.update(
-                "INSERT INTO scores (application_id, subject, score, entry_by, entry_time) VALUES (?, ?, ?, ?, ?)",
-                req.getApplicationId(), req.getSubject(), req.getScore(), ctx.getUserId(), Timestamp.valueOf(LocalDateTime.now())
+                "INSERT INTO scores (student_id, subject, score, entry_by, entry_time) VALUES (?, ?, ?, ?, ?)",
+                req.getStudentId(), req.getSubject(), req.getScore(), ctx.getUserId(), Timestamp.valueOf(LocalDateTime.now())
         );
-        log(ctx.getUserId(), "录入成绩: appId=" + req.getApplicationId() + ", subject=" + req.getSubject() + ", score=" + req.getScore(), request);
+        log(ctx.getUserId(), "录入成绩: appId=" + req.getStudentId() + ", subject=" + req.getSubject() + ", score=" + req.getScore(), request);
         return ResponseEntity.ok("OK");
     }
 

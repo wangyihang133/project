@@ -1,12 +1,12 @@
 package com.exam.onlineexamsystem.dto;
 
 public class ScoreEntryReq {
-    private Integer applicationId;
+    private Integer studentId;
     private String subject;
     private Double score;
 
-    public Integer getApplicationId() { return applicationId; }
-    public void setApplicationId(Integer applicationId) { this.applicationId = applicationId; }
+    public Integer getStudentId() { return studentId; }
+    public void setStudentId(Integer applicationId) { this.studentId = applicationId; }
 
     public String getSubject() { return subject; }
     public void setSubject(String subject) { this.subject = subject; }
