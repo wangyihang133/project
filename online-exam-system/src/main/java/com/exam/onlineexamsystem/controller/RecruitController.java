@@ -101,11 +101,31 @@ public class RecruitController {
     // -------- exams CRUD（考试设置） --------
 
     @GetMapping("/exams")
-    public ResponseEntity<?> listExams(@RequestHeader(value = "Authorization", required = false) String auth) {
+    public ResponseEntity<?> listExams(@RequestHeader(value = "Authorization", required = false) String auth,
+                                       @RequestParam(value = "year", required = false) Integer year,
+                                       @RequestParam(value = "type", required = false) String type,
+                                       @RequestParam(value = "major", required = false) String major) {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
-        String sql = "SELECT id, exam_name, exam_type, exam_time, exam_major, candidate_count, remarks FROM exams ORDER BY exam_time DESC";
-        return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
+
+        StringBuilder sql = new StringBuilder("SELECT id, exam_name, exam_type, exam_time, exam_major, candidate_count, remarks FROM exams WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (year != null) {
+            sql.append(" AND YEAR(exam_time) = ?");
+            params.add(year);
+        }
+        if (type != null && !type.isBlank()) {
+            sql.append(" AND exam_type = ?");
+            params.add(type.trim());
+        }
+        if (major != null && !major.isBlank()) {
+            sql.append(" AND exam_major LIKE ?");
+            params.add("%" + major.trim() + "%");
+        }
+
+        sql.append(" ORDER BY exam_time DESC");
+        return ResponseEntity.ok(jdbcTemplate.queryForList(sql.toString(), params.toArray()));
     }
 
     @PostMapping("/exams")
@@ -197,9 +217,10 @@ public class RecruitController {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
 
-        String sql = "SELECT a.*, u.username, u.phone, u.email, s.major FROM applications a " +
-                "JOIN students s ON a.student_id = s.id " +
-                "JOIN users u ON s.user_id = u.id ";
+        String sql = "SELECT a.*, u.username, u.phone, u.email, s.major, e.exam_name FROM applications a " +
+            "JOIN students s ON a.student_id = s.id " +
+            "JOIN users u ON s.user_id = u.id " +
+            "LEFT JOIN exams e ON a.exam_id = e.id ";
         List<Object> params = new ArrayList<>();
         if (status != null && !status.isBlank()) {
             sql += "WHERE a.status = ? ";
@@ -234,23 +255,23 @@ public class RecruitController {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (!canRecruit(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
 
-        if (req.getExamYear() == null || req.getMajor() == null || req.getMajor().isBlank() || req.getMinScore() == null) {
+        if (req.getExamId() == null || req.getMajor() == null || req.getMajor().isBlank() || req.getMinScore() == null) {
             return ResponseEntity.badRequest().body("INVALID_PAYLOAD");
         }
 
         Integer cnt = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM admission_scoreline WHERE exam_year = ? AND major = ?",
-                Integer.class, req.getExamYear(), req.getMajor()
+            "SELECT COUNT(*) FROM admission_scoreline WHERE exam_id = ? AND major = ?",
+            Integer.class, req.getExamId(), req.getMajor()
         );
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
         if (cnt != null && cnt > 0) {
-            jdbcTemplate.update("UPDATE admission_scoreline SET min_score = ?, set_by = ?, set_time = ? WHERE exam_year = ? AND major = ?",
-                    req.getMinScore(), ctx.getUserId(), now, req.getExamYear(), req.getMajor());
+            jdbcTemplate.update("UPDATE admission_scoreline SET min_score = ?, set_by = ?, set_time = ? WHERE exam_id = ? AND major = ?",
+                req.getMinScore(), ctx.getUserId(), now, req.getExamId(), req.getMajor());
         } else {
-            jdbcTemplate.update("INSERT INTO admission_scoreline (exam_year, major, min_score, set_by, set_time) VALUES (?, ?, ?, ?, ?)",
-                    req.getExamYear(), req.getMajor(), req.getMinScore(), ctx.getUserId(), now);
+            jdbcTemplate.update("INSERT INTO admission_scoreline (exam_id, major, min_score, set_by, set_time) VALUES (?, ?, ?, ?, ?)",
+                req.getExamId(), req.getMajor(), req.getMinScore(), ctx.getUserId(), now);
         }
-        log(ctx.getUserId(), "设置分数线: year=" + req.getExamYear() + ", major=" + req.getMajor() + ", minScore=" + req.getMinScore(), request);
+        log(ctx.getUserId(), "设置分数线: examId=" + req.getExamId() + ", major=" + req.getMajor() + ", minScore=" + req.getMinScore(), request);
         return ResponseEntity.ok("OK");
     }
 
@@ -291,22 +312,34 @@ public class RecruitController {
         try { if (req.getExamDate() != null && !req.getExamDate().isBlank()) examDate = Date.valueOf(LocalDate.parse(req.getExamDate())); } catch (Exception ignored) {}
         String examTime = req.getExamTime();
 
-        // confirmed applications without room
-        List<Map<String, Object>> apps = jdbcTemplate.queryForList(
-                "SELECT a.id FROM applications a LEFT JOIN exam_rooms r ON a.id = r.application_id " +
-                        "WHERE a.status = '已确认' AND r.id IS NULL ORDER BY a.application_time ASC LIMIT 1000"
-        );
+        // confirmed applications without room, optionally filtered by exam
+                StringBuilder sql = new StringBuilder(
+			"SELECT a.id, a.exam_id FROM applications a LEFT JOIN exam_rooms r ON a.id = r.application_id " +
+				"WHERE a.status = '已确认' AND r.id IS NULL");
+                List<Object> params = new ArrayList<>();
+                if (req.getExamId() != null) {
+                        sql.append(" AND a.exam_id = ?");
+                        params.add(req.getExamId());
+                }
+                sql.append(" ORDER BY a.application_time ASC LIMIT 1000");
+
+                List<Map<String, Object>> apps = jdbcTemplate.queryForList(sql.toString(), params.toArray());
 
         int seat = 1;
         int assigned = 0;
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
         for (Map<String, Object> a : apps) {
-            Integer appId = ((Number) a.get("id")).intValue();
+                Integer appId = ((Number) a.get("id")).intValue();
+                Long examId = null;
+                Object eid = a.get("exam_id");
+                if (eid instanceof Number) {
+                     examId = ((Number) eid).longValue();
+                }
             String roomNumber = prefix + roomNo;
             jdbcTemplate.update(
-                    "INSERT INTO exam_rooms (application_id, room_number, seat_number, exam_date, exam_time, address, assigned_by, assigned_time) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    appId, roomNumber, seat, examDate, examTime, address, ctx.getUserId(), now
+				"INSERT INTO exam_rooms (application_id, exam_id, room_number, seat_number, exam_date, exam_time, address, assigned_by, assigned_time) " +
+						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				appId, examId, roomNumber, seat, examDate, examTime, address, ctx.getUserId(), now
             );
             assigned++;
             seat++;

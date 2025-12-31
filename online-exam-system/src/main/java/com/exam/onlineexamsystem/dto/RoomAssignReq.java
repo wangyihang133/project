@@ -7,6 +7,7 @@ public class RoomAssignReq {
     private String examDate; // yyyy-MM-dd
     private String examTime; // e.g. 09:00-11:00
     private String address;
+    private Long examId; // 选定的考试ID（可选）
 
     public Integer getSeatsPerRoom() { return seatsPerRoom; }
     public void setSeatsPerRoom(Integer seatsPerRoom) { this.seatsPerRoom = seatsPerRoom; }
@@ -25,4 +26,7 @@ public class RoomAssignReq {
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    public Long getExamId() { return examId; }
+    public void setExamId(Long examId) { this.examId = examId; }
 }

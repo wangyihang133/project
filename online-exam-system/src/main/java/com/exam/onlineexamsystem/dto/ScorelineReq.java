@@ -1,12 +1,12 @@
 package com.exam.onlineexamsystem.dto;
 
 public class ScorelineReq {
-    private Integer examYear;
+    private Long examId;
     private String major;
     private Double minScore;
 
-    public Integer getExamYear() { return examYear; }
-    public void setExamYear(Integer examYear) { this.examYear = examYear; }
+    public Long getExamId() { return examId; }
+    public void setExamId(Long examId) { this.examId = examId; }
 
     public String getMajor() { return major; }
     public void setMajor(String major) { this.major = major; }

@@ -95,47 +95,34 @@ public class StudentController {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (ctx == null) return ResponseEntity.status(401).body("UNAUTHORIZED");
 
-        Integer examYear = req.getExamYear();
-        String examType = req.getExamType();
         String major = req.getMajor();
 
-        // 如果传了 examId，则以 exams 表为准填充 examYear / examType / major
-        if (req.getExamId() != null) {
-            Map<String, Object> exam;
-            try {
-                exam = jdbcTemplate.queryForMap("SELECT exam_time, exam_type, exam_major FROM exams WHERE id = ?", req.getExamId());
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("EXAM_NOT_FOUND");
-            }
-
-            Object t = exam.get("exam_time");
-            if (t instanceof java.sql.Timestamp ts) {
-                examYear = ts.toLocalDateTime().getYear();
-            }
-            if (exam.get("exam_type") != null) {
-                examType = exam.get("exam_type").toString();
-            }
-            if (exam.get("exam_major") != null) {
-                major = exam.get("exam_major").toString();
-            }
+        // 现在必须通过 examId 选择考试
+        if (req.getExamId() == null) {
+            return ResponseEntity.badRequest().body("EXAM_ID_REQUIRED");
         }
 
-        if (examYear == null || examYear < 2000 || examYear > 2099) {
-            return ResponseEntity.badRequest().body("INVALID_EXAM_YEAR");
+        // 以 exams 表为准填充 major
+        Map<String, Object> exam;
+        try {
+            exam = jdbcTemplate.queryForMap("SELECT exam_major FROM exams WHERE id = ?", req.getExamId());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("EXAM_NOT_FOUND");
         }
-        if (examType == null || examType.isBlank()) {
-            return ResponseEntity.badRequest().body("EXAM_TYPE_REQUIRED");
+        if (exam.get("exam_major") != null) {
+            major = exam.get("exam_major").toString();
         }
+
         if (major == null || major.isBlank()) {
             return ResponseEntity.badRequest().body("MAJOR_REQUIRED");
         }
 
         Integer studentId = ensureStudent(ctx.getUserId(), major);
 
-        // prevent duplicate apply for same year/type: allow at most one
+        // prevent duplicate apply for same exam: allow at most one
         Integer cnt = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM applications WHERE student_id = ? AND exam_year = ? AND exam_type = ?",
-                Integer.class, studentId, examYear, examType
+            "SELECT COUNT(*) FROM applications WHERE student_id = ? AND exam_id = ?",
+            Integer.class, studentId, req.getExamId()
         );
         if (cnt != null && cnt > 0) {
             return ResponseEntity.status(409).body("ALREADY_APPLIED");
@@ -143,10 +130,10 @@ public class StudentController {
 
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
         jdbcTemplate.update(
-                "INSERT INTO applications (student_id, exam_year, exam_type, application_time, status) VALUES (?, ?, ?, ?, ?)",
-                studentId, examYear, examType, now, "待确认"
+            "INSERT INTO applications (student_id, exam_id, application_time, status) VALUES (?, ?, ?, ?)",
+            studentId, req.getExamId(), now, "待确认"
         );
-            log(ctx.getUserId(), "学生提交报名: year=" + examYear + ", type=" + examType + ", major=" + major, request);
+            log(ctx.getUserId(), "学生提交报名: examId=" + req.getExamId() + ", major=" + major, request);
         return ResponseEntity.ok("OK");
     }
 
@@ -165,8 +152,9 @@ public class StudentController {
         Integer studentId = ensureStudent(ctx.getUserId(), null);
 
         StringBuilder sql = new StringBuilder(
-                "SELECT s.id, s.application_id, s.subject, s.score, s.entry_time, a.exam_year, a.exam_type " +
-                        "FROM scores s JOIN applications a ON s.application_id = a.id WHERE a.student_id = ?");
+                "SELECT s.id, s.application_id, s.subject, s.score, s.entry_time, e.exam_time, e.exam_type " +
+                    "FROM scores s JOIN applications a ON s.application_id = a.id " +
+                    "LEFT JOIN exams e ON a.exam_id = e.id WHERE a.student_id = ?");
         List<Object> params = new ArrayList<>();
         params.add(studentId);
 
@@ -175,11 +163,11 @@ public class StudentController {
             params.add(applicationId);
         }
         if (examYear != null) {
-            sql.append(" AND a.exam_year = ?");
+            sql.append(" AND YEAR(e.exam_time) = ?");
             params.add(examYear);
         }
         if (examType != null && !examType.isBlank()) {
-            sql.append(" AND a.exam_type = ?");
+            sql.append(" AND e.exam_type = ?");
             params.add(examType.trim());
         }
 
@@ -256,7 +244,10 @@ public class StudentController {
         Map<String, Object> app;
         try {
             app = jdbcTemplate.queryForMap(
-                    "SELECT a.*, s.major FROM applications a JOIN students s ON a.student_id = s.id WHERE a.student_id = ? ORDER BY a.application_time DESC LIMIT 1",
+                    "SELECT a.*, s.major, e.exam_time FROM applications a " +
+                        "JOIN students s ON a.student_id = s.id " +
+                        "LEFT JOIN exams e ON a.exam_id = e.id " +
+                        "WHERE a.student_id = ? ORDER BY a.application_time DESC LIMIT 1",
                     studentId
             );
         } catch (Exception e) {
@@ -264,7 +255,16 @@ public class StudentController {
         }
 
         Integer appId = ((Number) app.get("id")).intValue();
-        Integer examYear = (app.get("exam_year") instanceof Number) ? ((Number) app.get("exam_year")).intValue() : null;
+        Integer examYear = null;
+        Object et = app.get("exam_time");
+        if (et instanceof java.sql.Timestamp ts) {
+            examYear = ts.toLocalDateTime().getYear();
+        }
+        Long examId = null;
+        Object eid = app.get("exam_id");
+        if (eid instanceof Number) {
+            examId = ((Number) eid).longValue();
+        }
         String major = (String) app.get("major");
 
         double total = 0;
@@ -278,12 +278,14 @@ public class StudentController {
 
         Double minScore = null;
         try {
-            Map<String, Object> line = jdbcTemplate.queryForMap(
-                    "SELECT min_score FROM admission_scoreline WHERE exam_year = ? AND major = ? ORDER BY set_time DESC LIMIT 1",
-                    examYear, major
-            );
-            Object ms = line.get("min_score");
-            if (ms instanceof Number) minScore = ((Number) ms).doubleValue();
+            if (examId != null) {
+                Map<String, Object> line = jdbcTemplate.queryForMap(
+					"SELECT min_score FROM admission_scoreline WHERE exam_id = ? AND major = ? ORDER BY set_time DESC LIMIT 1",
+					examId, major
+				);
+                Object ms = line.get("min_score");
+                if (ms instanceof Number) minScore = ((Number) ms).doubleValue();
+            }
         } catch (Exception ignored) {}
 
         String status;
@@ -292,6 +294,7 @@ public class StudentController {
 
         return ResponseEntity.ok(Map.of(
                 "applicationId", appId,
+            "examId", examId,
                 "examYear", examYear,
                 "major", major,
                 "total", total,

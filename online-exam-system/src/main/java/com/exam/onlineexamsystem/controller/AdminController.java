@@ -45,14 +45,15 @@ public class AdminController {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (!isAdmin(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
 
-        String sql = "SELECT a.*, u.username, u.real_name, u.phone, u.email, s.major " +
-                "FROM applications a " +
-                "JOIN students s ON a.student_id = s.id " +
-                "JOIN users u ON s.user_id = u.id ";
+        String sql = "SELECT a.*, u.username, u.real_name, u.phone, u.email, s.major, e.exam_time " +
+            "FROM applications a " +
+            "JOIN students s ON a.student_id = s.id " +
+            "JOIN users u ON s.user_id = u.id " +
+            "LEFT JOIN exams e ON a.exam_id = e.id ";
         StringBuilder where = new StringBuilder();
         List<Object> params = new ArrayList<>();
         if (status != null && !status.isBlank()) { appendWhere(where, "a.status = ?"); params.add(status); }
-        if (examYear != null) { appendWhere(where, "a.exam_year = ?"); params.add(examYear); }
+        if (examYear != null) { appendWhere(where, "YEAR(e.exam_time) = ?"); params.add(examYear); }
         if (major != null && !major.isBlank()) { appendWhere(where, "s.major = ?"); params.add(major); }
         sql += where.toString() + " ORDER BY a.application_time DESC LIMIT 1000";
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql, params.toArray()));
@@ -65,14 +66,15 @@ public class AdminController {
         AuthContext ctx = authService.fromAuthHeader(auth);
         if (!isAdmin(ctx)) return ResponseEntity.status(403).body("FORBIDDEN");
 
-        String sql = "SELECT sc.*, a.exam_year, a.exam_type, a.status, u.username, s.major " +
-                "FROM scores sc " +
-                "JOIN applications a ON sc.application_id = a.id " +
-                "JOIN students s ON a.student_id = s.id " +
-                "JOIN users u ON s.user_id = u.id ";
+        String sql = "SELECT sc.*, a.status, u.username, s.major, e.exam_time, e.exam_type " +
+            "FROM scores sc " +
+            "JOIN applications a ON sc.application_id = a.id " +
+            "JOIN students s ON a.student_id = s.id " +
+            "JOIN users u ON s.user_id = u.id " +
+            "LEFT JOIN exams e ON a.exam_id = e.id ";
         StringBuilder where = new StringBuilder();
         List<Object> params = new ArrayList<>();
-        if (examYear != null) { appendWhere(where, "a.exam_year = ?"); params.add(examYear); }
+        if (examYear != null) { appendWhere(where, "YEAR(e.exam_time) = ?"); params.add(examYear); }
         if (major != null && !major.isBlank()) { appendWhere(where, "s.major = ?"); params.add(major); }
         sql += where.toString() + " ORDER BY sc.entry_time DESC LIMIT 2000";
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql, params.toArray()));

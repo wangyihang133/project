@@ -49,7 +49,7 @@ onMounted(load);
     <table v-if="list.length" border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:1100px">
       <thead>
         <tr>
-          <th>ID</th><th>考生</th><th>专业</th><th>年份</th><th>类型</th><th>状态</th><th>报名时间</th><th>确认时间</th>
+          <th>ID</th><th>考生</th><th>专业</th><th>年份</th><th>状态</th><th>报名时间</th><th>确认时间</th>
         </tr>
       </thead>
       <tbody>
@@ -58,7 +58,6 @@ onMounted(load);
           <td>{{ a.username }}</td>
           <td>{{ a.major }}</td>
           <td>{{ a.exam_year }}</td>
-          <td>{{ a.exam_type }}</td>
           <td>{{ a.status }}</td>
           <td>{{ a.application_time }}</td>
           <td>{{ a.confirmation_time }}</td>

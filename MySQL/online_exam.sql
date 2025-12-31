@@ -23,22 +23,24 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `admission_scoreline`;
 CREATE TABLE `admission_scoreline`  (
   `id` int NOT NULL AUTO_INCREMENT,
-  `exam_year` year NOT NULL,
+  `exam_id` bigint NOT NULL,
   `major` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `min_score` decimal(5, 2) NOT NULL,
   `set_by` int NOT NULL,
   `set_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `set_by`(`set_by` ASC) USING BTREE,
-  CONSTRAINT `admission_scoreline_ibfk_1` FOREIGN KEY (`set_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  INDEX `idx_admission_exam`(`exam_id` ASC) USING BTREE,
+  CONSTRAINT `admission_scoreline_ibfk_1` FOREIGN KEY (`set_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `admission_scoreline_ibfk_2` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of admission_scoreline
 -- ----------------------------
-INSERT INTO `admission_scoreline` VALUES (1, 2024, '计算机科学与技术', 85.00, 5, '2025-12-29 10:38:19');
-INSERT INTO `admission_scoreline` VALUES (2, 2024, '软件工程', 80.00, 5, '2025-12-29 10:38:19');
-INSERT INTO `admission_scoreline` VALUES (3, 2024, '人工智能', 82.00, 5, '2025-12-29 10:38:19');
+INSERT INTO `admission_scoreline` (`id`, `exam_id`, `major`, `min_score`, `set_by`, `set_time`) VALUES (1, 1, '计算机科学与技术', 85.00, 5, '2025-12-29 10:38:19');
+INSERT INTO `admission_scoreline` (`id`, `exam_id`, `major`, `min_score`, `set_by`, `set_time`) VALUES (2, 1, '软件工程', 80.00, 5, '2025-12-29 10:38:19');
+INSERT INTO `admission_scoreline` (`id`, `exam_id`, `major`, `min_score`, `set_by`, `set_time`) VALUES (3, 1, '人工智能', 82.00, 5, '2025-12-29 10:38:19');
 
 -- ----------------------------
 -- Table structure for applications
@@ -47,25 +49,27 @@ DROP TABLE IF EXISTS `applications`;
 CREATE TABLE `applications`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `student_id` int NOT NULL,
-  `exam_year` year NOT NULL,
-  `exam_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `application_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `status` enum('待确认','已确认','已取消') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '待确认',
   `confirmation_time` timestamp NULL DEFAULT NULL,
   `confirmed_by` int NULL DEFAULT NULL,
+  `exam_id` bigint NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `student_id`(`student_id` ASC) USING BTREE,
   INDEX `confirmed_by`(`confirmed_by` ASC) USING BTREE,
+  INDEX `exam_id`(`exam_id` ASC) USING BTREE,
   CONSTRAINT `applications_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`confirmed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
+  CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`confirmed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT,
+  CONSTRAINT `applications_ibfk_3` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of applications
 -- ----------------------------
-INSERT INTO `applications` VALUES (1, 1, 2024, '自主招生', '2025-12-29 10:38:09', '已确认', NULL, 5);
-INSERT INTO `applications` VALUES (2, 2, 2024, '自主招生', '2025-12-29 10:38:09', '待确认', NULL, NULL);
-INSERT INTO `applications` VALUES (3, 3, 2024, '综合评价', '2025-12-29 10:38:09', '已确认', NULL, 5);
+INSERT INTO `applications` (`id`,`student_id`,`application_time`,`status`,`confirmation_time`,`confirmed_by`,`exam_id`) VALUES
+(1, 1, '2025-12-29 10:38:09', '已确认', NULL, 5, NULL),
+(2, 2, '2025-12-29 10:38:09', '待确认', NULL, NULL, NULL),
+(3, 3, '2025-12-29 10:38:09', '已确认', NULL, 5, NULL);
 
 -- ----------------------------
 -- Table structure for exam_info
@@ -97,6 +101,7 @@ DROP TABLE IF EXISTS `exam_rooms`;
 CREATE TABLE `exam_rooms`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `application_id` int NOT NULL,
+  `exam_id` bigint NULL DEFAULT NULL,
   `room_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `seat_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `exam_date` date NULL DEFAULT NULL,
@@ -107,16 +112,19 @@ CREATE TABLE `exam_rooms`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `application_id`(`application_id` ASC) USING BTREE,
   INDEX `assigned_by`(`assigned_by` ASC) USING BTREE,
+  INDEX `exam_rooms_exam_id`(`exam_id` ASC) USING BTREE,
   CONSTRAINT `exam_rooms_ibfk_1` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `exam_rooms_ibfk_2` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `exam_rooms_ibfk_2` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `exam_rooms_ibfk_3` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of exam_rooms
 -- ----------------------------
-INSERT INTO `exam_rooms` VALUES (1, 1, 'A101', '01', '2024-06-07', '09:00:00', '教学楼A栋101室', 5, '2025-12-29 10:38:25');
-INSERT INTO `exam_rooms` VALUES (2, 2, 'A101', '02', '2024-06-07', '09:00:00', '教学楼A栋101室', 5, '2025-12-29 10:38:25');
-INSERT INTO `exam_rooms` VALUES (3, 3, 'B202', '05', '2024-06-08', '14:00:00', '教学楼B栋202室', 5, '2025-12-29 10:38:25');
+INSERT INTO `exam_rooms` (`id`, `application_id`, `exam_id`, `room_number`, `seat_number`, `exam_date`, `exam_time`, `address`, `assigned_by`, `assigned_time`) VALUES
+(1, 1, NULL, 'A101', '01', '2024-06-07', '09:00:00', '教学楼A栋101室', 5, '2025-12-29 10:38:25'),
+(2, 2, NULL, 'A101', '02', '2024-06-07', '09:00:00', '教学楼A栋101室', 5, '2025-12-29 10:38:25'),
+(3, 3, NULL, 'B202', '05', '2024-06-08', '14:00:00', '教学楼B栋202室', 5, '2025-12-29 10:38:25');
 
 -- ----------------------------
 -- Table structure for login_history

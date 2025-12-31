@@ -42,12 +42,23 @@ onMounted(load);
     <table v-if="list.length" border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:980px">
       <thead>
         <tr>
-          <th>ID</th><th>考生</th><th>专业</th><th>年份</th><th>类型</th><th>联系方式</th><th>状态</th><th>操作</th>
+          <th>ID</th>
+          <th>考试ID</th>
+          <th>考试名称</th>
+          <th>考生</th>
+          <th>专业</th>
+          <th>年份</th>
+          <th>类型</th>
+          <th>联系方式</th>
+          <th>状态</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="a in list" :key="a.id">
           <td>{{ a.id }}</td>
+          <td>{{ a.exam_id ?? "-" }}</td>
+          <td>{{ a.exam_name ?? "-" }}</td>
           <td>{{ a.username }}</td>
           <td>{{ a.major }}</td>
           <td>{{ a.exam_year }}</td>

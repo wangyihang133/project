@@ -124,7 +124,7 @@ onMounted(async () => {
     <h4 style="margin-top:18px">我的报名记录</h4>
     <div v-if="myApps.length===0" style="color:#666">暂无记录</div>
     <div v-for="a in myApps" :key="a.id" style="border:1px solid #eee; border-radius:8px; padding:10px; margin:8px 0">
-      <div>报名ID：{{ a.id }} ｜ 年份：{{ a.exam_year }} ｜ 类型：{{ a.exam_type }}</div>
+      <div>报名ID：{{ a.id }} ｜ 考试ID：{{ a.exam_id ?? '-' }}</div>
       <div>状态：<b>{{ a.status }}</b></div>
       <div style="color:#666; font-size:13px">报名时间：{{ a.application_time }}</div>
       <div style="color:#666; font-size:13px">确认时间：{{ a.confirmation_time }}</div>
