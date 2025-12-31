@@ -44,16 +44,42 @@ public class AuthController {
         if (req.getPassword() == null || req.getPassword().length() < 6) {
             return ResponseEntity.badRequest().body("PASSWORD_TOO_SHORT");
         }
+        // basic phone validation: if provided must be 11 digits
+        if (req.getPhone() != null && !req.getPhone().isBlank()) {
+            if (!req.getPhone().matches("\\d{11}")) {
+                return ResponseEntity.badRequest().body("INVALID_PHONE");
+            }
+        }
+        // basic email validation: if provided must contain @ and .
+        if (req.getEmail() != null && !req.getEmail().isBlank()) {
+            if (!req.getEmail().matches("^\\S+@\\S+\\.\\S+$")) {
+                return ResponseEntity.badRequest().body("INVALID_EMAIL");
+            }
+        }
         try {
             Integer cnt = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM users WHERE username = ?", Integer.class, req.getUsername());
             if (cnt != null && cnt > 0) {
                 return ResponseEntity.status(409).body("用户名已存在");
             }
 
+            // ensure phone/email uniqueness when provided
+            if (req.getPhone() != null && !req.getPhone().isBlank()) {
+                Integer pcnt = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM users WHERE phone = ?", Integer.class, req.getPhone());
+                if (pcnt != null && pcnt > 0) {
+                    return ResponseEntity.status(409).body("PHONE_EXISTS");
+                }
+            }
+            if (req.getEmail() != null && !req.getEmail().isBlank()) {
+                Integer ecnt = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM users WHERE email = ?", Integer.class, req.getEmail());
+                if (ecnt != null && ecnt > 0) {
+                    return ResponseEntity.status(409).body("EMAIL_EXISTS");
+                }
+            }
+
             // server-side enforce new users as student (ignore client-provided role)
             String role = "student";
 
-            jdbcTemplate.update("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", req.getUsername(), req.getPassword(), role);
+            jdbcTemplate.update("INSERT INTO users (username, password, role, phone, email) VALUES (?, ?, ?, ?, ?)", req.getUsername(), req.getPassword(), role, req.getPhone(), req.getEmail());
             return ResponseEntity.ok("ok");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("注册失败");
