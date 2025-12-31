@@ -235,6 +235,219 @@ public class StudentController {
         return ResponseEntity.ok(Map.of("applicationId", studentId, "scores", rows, "total", total));
     }
 
+    // 按 applicationId 分组返回当前学生所有成绩
+    @GetMapping("/scores/by-application")
+    public ResponseEntity<?> myScoresGroupedByApplication(
+            @RequestHeader(value = "Authorization", required = false) String auth) {
+
+        AuthContext ctx = authService.fromAuthHeader(auth);
+        if (ctx == null) return ResponseEntity.status(401).body("UNAUTHORIZED");
+
+        Integer studentId = ensureStudent(ctx.getUserId(), null);
+
+        // 把 application + exam 信息一起带出来，前端展示会很方便
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "SELECT " +
+                        "a.id AS application_id, a.status AS application_status, a.application_time, " +
+                        "e.id AS exam_id, e.exam_name, e.exam_type, e.exam_time, e.exam_major, " +
+                        "s.id AS score_id, s.subject, s.score, s.entry_time " +
+                "FROM applications a " +
+                "LEFT JOIN exams e ON a.exam_id = e.id " +
+                "LEFT JOIN scores s ON s.application_id = a.id " +
+                "WHERE a.student_id = ? " +
+                "ORDER BY a.application_time DESC, s.entry_time ASC",
+                studentId
+        );
+
+        // 分组：applicationId -> { application信息 + scores[] + total }
+        Map<Integer, Map<String, Object>> grouped = new LinkedHashMap<>();
+
+        for (Map<String, Object> r : rows) {
+            Integer appId = r.get("application_id") == null ? null : ((Number) r.get("application_id")).intValue();
+            if (appId == null) continue;
+
+            Map<String, Object> app = grouped.get(appId);
+            if (app == null) {
+                app = new LinkedHashMap<>();
+                app.put("applicationId", appId);
+                app.put("applicationStatus", r.get("application_status"));
+                app.put("applicationTime", r.get("application_time"));
+
+                app.put("examId", r.get("exam_id"));
+                app.put("examName", r.get("exam_name"));
+                app.put("examType", r.get("exam_type"));
+                app.put("examTime", r.get("exam_time"));
+                app.put("examMajor", r.get("exam_major"));
+
+                app.put("scores", new ArrayList<Map<String, Object>>());
+                app.put("total", 0.0);
+
+                grouped.put(appId, app);
+            }
+
+            // scores 可能为空（没录入成绩时 LEFT JOIN 为 null）
+            Object scoreIdObj = r.get("score_id");
+            if (scoreIdObj != null) {
+                Map<String, Object> score = new LinkedHashMap<>();
+                score.put("id", ((Number) scoreIdObj).intValue());
+                score.put("subject", r.get("subject"));
+                score.put("score", r.get("score"));
+                score.put("entryTime", r.get("entry_time"));
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> scores = (List<Map<String, Object>>) app.get("scores");
+                scores.add(score);
+
+                Object sc = r.get("score");
+                if (sc instanceof Number) {
+                    double total = (double) app.get("total");
+                    total += ((Number) sc).doubleValue();
+                    app.put("total", total);
+                }
+            }
+        }
+
+        // 返回数组，前端更好循环
+        return ResponseEntity.ok(new ArrayList<>(grouped.values()));
+    }
+
+    // 通过 username 查 student -> applications -> scores，按 applicationId 分组返回
+    @GetMapping("/scores/by-application-username")
+    public ResponseEntity<?> scoresByApplicationUsername(
+            @RequestParam("username") String username
+    ) {
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body("USERNAME_REQUIRED");
+        }
+        username = username.trim();
+
+        // 1) username -> user_id
+        Integer userId;
+        try {
+            userId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM users WHERE username = ?",
+                    Integer.class,
+                    username
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body("USER_NOT_FOUND");
+        }
+
+        // 2) user_id -> student_id
+        Integer studentId;
+        try {
+            studentId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM students WHERE user_id = ?",
+                    Integer.class,
+                    userId
+            );
+        } catch (Exception e) {
+            // 没有学生记录，返回空数组
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
+        // 3) 查 application + exam + student + scores（把 student.major 一起带出来）
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+            "SELECT " +
+                "a.id AS application_id, a.status AS application_status, a.application_time, " +
+                "e.id AS exam_id, e.exam_name, e.exam_type, e.exam_time, e.exam_major, " +
+                "st.major AS student_major, " +
+                "s.id AS score_id, s.subject, s.score, s.entry_time " +
+            "FROM applications a " +
+            "LEFT JOIN exams e ON a.exam_id = e.id " +
+            "LEFT JOIN students st ON a.student_id = st.id " +
+            "LEFT JOIN scores s ON s.application_id = a.id " +
+            "WHERE a.student_id = ? " +
+            "ORDER BY a.application_time DESC, s.entry_time ASC",
+            studentId
+        );
+
+        Map<Integer, Map<String, Object>> grouped = new LinkedHashMap<>();
+
+        for (Map<String, Object> r : rows) {
+            Integer appId = r.get("application_id") == null ? null : ((Number) r.get("application_id")).intValue();
+            if (appId == null) continue;
+
+            Map<String, Object> app = grouped.get(appId);
+            if (app == null) {
+                app = new LinkedHashMap<>();
+                app.put("applicationId", appId);
+                app.put("applicationStatus", r.get("application_status"));
+                app.put("applicationTime", r.get("application_time"));
+
+                app.put("examId", r.get("exam_id"));
+                app.put("examName", r.get("exam_name"));
+                app.put("examType", r.get("exam_type"));
+                app.put("examTime", r.get("exam_time"));
+                app.put("examMajor", r.get("exam_major"));
+
+                    // 保存 student_major 以便后续优先使用
+                    app.put("studentMajor", r.get("student_major"));
+
+                app.put("scores", new ArrayList<Map<String, Object>>());
+                app.put("total", 0.0);
+
+                grouped.put(appId, app);
+            }
+
+            Object scoreIdObj = r.get("score_id");
+            if (scoreIdObj != null) {
+                Map<String, Object> score = new LinkedHashMap<>();
+                score.put("id", ((Number) scoreIdObj).intValue());
+                score.put("subject", r.get("subject"));
+                score.put("score", r.get("score"));
+                score.put("entryTime", r.get("entry_time"));
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> scores = (List<Map<String, Object>>) app.get("scores");
+                scores.add(score);
+
+                Object sc = r.get("score");
+                if (sc instanceof Number) {
+                    double total = (double) app.get("total");
+                    total += ((Number) sc).doubleValue();
+                    app.put("total", total);
+                }
+            }
+        }
+
+        // 分组完成后，针对每个报名计算 minScore 与录取状态（优先 studentMajor，其次 examMajor）
+        for (Map<String, Object> app : grouped.values()) {
+            Object examIdObj = app.get("examId");
+            String major = app.get("examMajor") == null ? null : app.get("examMajor").toString();
+
+            if (app.get("studentMajor") != null && !app.get("studentMajor").toString().isBlank()) {
+                major = app.get("studentMajor").toString();
+            }
+
+            Double minScore = null;
+            if (examIdObj instanceof Number && major != null && !major.isBlank()) {
+                Long examId = ((Number) examIdObj).longValue();
+                try {
+                    Map<String, Object> line = jdbcTemplate.queryForMap(
+                            "SELECT min_score FROM admission_scoreline WHERE exam_id = ? AND major = ? ORDER BY set_time DESC LIMIT 1",
+                            examId, major
+                    );
+                    Object ms = line.get("min_score");
+                    if (ms instanceof Number) minScore = ((Number) ms).doubleValue();
+                } catch (Exception ignored) {}
+            }
+
+            double total = app.get("total") instanceof Number ? ((Number) app.get("total")).doubleValue() : 0.0;
+
+            String admissionStatus;
+            if (minScore == null) admissionStatus = "待公布分数线";
+            else admissionStatus = total >= minScore ? "已录取" : "未录取";
+
+            app.put("minScore", minScore);
+            app.put("admissionStatus", admissionStatus);
+            // 将用于显示的专业也写入方便前端使用
+            app.put("major", major);
+        }
+
+        return ResponseEntity.ok(new ArrayList<>(grouped.values()));
+    }
+
     @GetMapping("/admission/me")
     public ResponseEntity<?> myAdmission(@RequestHeader(value = "Authorization", required = false) String auth) {
         AuthContext ctx = authService.fromAuthHeader(auth);
@@ -280,9 +493,9 @@ public class StudentController {
         try {
             if (examId != null) {
                 Map<String, Object> line = jdbcTemplate.queryForMap(
-					"SELECT min_score FROM admission_scoreline WHERE exam_id = ? AND major = ? ORDER BY set_time DESC LIMIT 1",
-					examId, major
-				);
+				"SELECT min_score FROM admission_scoreline WHERE exam_id = ? AND major = ? ORDER BY set_time DESC LIMIT 1",
+				examId, major
+			);
                 Object ms = line.get("min_score");
                 if (ms instanceof Number) minScore = ((Number) ms).doubleValue();
             }

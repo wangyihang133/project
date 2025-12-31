@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import http from "@/api/http";
 
-const studentId = ref<number | null>(null);
+const applicationId = ref<number | null>(null);
 const subject = ref("综合");
 const score = ref<number>(0);
 
@@ -14,7 +14,7 @@ async function submit() {
   err.value = "";
   try {
     await http.post("/recruit/scores/entry", {
-      studentId: studentId.value,
+      applicationId: applicationId.value,
       subject: subject.value,
       score: score.value,
     });
@@ -30,7 +30,7 @@ async function submit() {
     <h3>成绩录入</h3>
     <div style="display:grid; grid-template-columns:140px 1fr; gap:8px; max-width:520px">
       <div>报名ID</div>
-      <input v-model.number="studentId" type="number" />
+      <input v-model.number="applicationId" type="number" />
       <div>科目</div>
       <input v-model="subject" />
       <div>分数</div>
