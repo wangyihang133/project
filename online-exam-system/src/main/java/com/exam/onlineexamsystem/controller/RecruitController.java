@@ -1,21 +1,34 @@
 package com.exam.onlineexamsystem.controller;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.exam.onlineexamsystem.dto.ConfirmReq;
 import com.exam.onlineexamsystem.dto.RoomAssignReq;
 import com.exam.onlineexamsystem.dto.ScoreEntryReq;
 import com.exam.onlineexamsystem.dto.ScorelineReq;
 import com.exam.onlineexamsystem.security.AuthContext;
 import com.exam.onlineexamsystem.security.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.bind.annotation.*;
 
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/recruit")
@@ -64,8 +77,12 @@ public class RecruitController {
         if (title == null || title.isBlank()) return ResponseEntity.badRequest().body("TITLE_REQUIRED");
 
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
-        jdbcTemplate.update("INSERT INTO exam_info (title, content, publish_by, publish_time, is_active) VALUES (?, ?, ?, ?, ?)",
-                title, content, ctx.getUsername(), now, isActive);
+        try {
+            jdbcTemplate.update("INSERT INTO exam_info (title, content, publish_by, publish_time, is_active) VALUES (?, ?, ?, ?, ?)",
+                    title, content, ctx.getUserId(), now, isActive);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("DATABASE_ERROR: " + e.getMessage());
+        }
         log(ctx.getUserId(), "发布/新增招考信息: " + title, request);
         return ResponseEntity.ok("OK");
     }
