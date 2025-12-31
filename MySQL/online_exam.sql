@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 80043 (8.0.43)
  Source Host           : localhost:3306
- Source Schema         : online-exam
+ Source Schema         : online_exam
 
  Target Server Type    : MySQL
  Target Server Version : 80043 (8.0.43)
  File Encoding         : 65001
 
- Date: 29/12/2025 10:40:05
+ Date: 31/12/2025 09:58:50
 */
 
 SET NAMES utf8mb4;
@@ -31,7 +31,7 @@ CREATE TABLE `admission_scoreline`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `set_by`(`set_by` ASC) USING BTREE,
   CONSTRAINT `admission_scoreline_ibfk_1` FOREIGN KEY (`set_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of admission_scoreline
@@ -58,7 +58,7 @@ CREATE TABLE `applications`  (
   INDEX `confirmed_by`(`confirmed_by` ASC) USING BTREE,
   CONSTRAINT `applications_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`confirmed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of applications
@@ -81,7 +81,7 @@ CREATE TABLE `exam_info`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `publish_by`(`publish_by` ASC) USING BTREE,
   CONSTRAINT `exam_info_ibfk_1` FOREIGN KEY (`publish_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of exam_info
@@ -109,7 +109,7 @@ CREATE TABLE `exam_rooms`  (
   INDEX `assigned_by`(`assigned_by` ASC) USING BTREE,
   CONSTRAINT `exam_rooms_ibfk_1` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `exam_rooms_ibfk_2` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of exam_rooms
@@ -131,7 +131,7 @@ CREATE TABLE `login_history`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `login_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of login_history
@@ -158,7 +158,7 @@ CREATE TABLE `scores`  (
   INDEX `entry_by`(`entry_by` ASC) USING BTREE,
   CONSTRAINT `scores_ibfk_1` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `scores_ibfk_2` FOREIGN KEY (`entry_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of scores
@@ -187,7 +187,7 @@ CREATE TABLE `students`  (
   UNIQUE INDEX `id_card`(`id_card` ASC) USING BTREE,
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `students_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of students
@@ -209,7 +209,7 @@ CREATE TABLE `system_logs`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `system_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_logs
@@ -234,8 +234,10 @@ CREATE TABLE `users`  (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+  UNIQUE INDEX `username`(`username` ASC) USING BTREE,
+  UNIQUE INDEX `ux_users_phone`(`phone` ASC) USING BTREE,
+  UNIQUE INDEX `ux_users_email`(`email` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users
@@ -243,7 +245,10 @@ CREATE TABLE `users`  (
 INSERT INTO `users` VALUES (1, 'zhangsan', '123456', 'student', '张三', '13800138001', 'zhangsan@example.com', '2025-12-29 10:37:52', '2025-12-29 10:37:52');
 INSERT INTO `users` VALUES (2, 'lisi', '123456', 'student', '李四', '13800138002', 'lisi@example.com', '2025-12-29 10:37:52', '2025-12-29 10:37:52');
 INSERT INTO `users` VALUES (3, 'wangwu', '123456', 'student', '王五', '13800138003', 'wangwu@example.com', '2025-12-29 10:37:52', '2025-12-29 10:37:52');
-INSERT INTO `users` VALUES (4, 'admin', 'admin123', 'system_admin', '系统管理员', NULL, 'admin@edu.com', '2025-12-29 10:37:52', '2025-12-29 10:37:52');
+INSERT INTO `users` VALUES (4, 'admin', '123456', 'system_admin', '系统管理员', '12800138005', 'admin@edu.com', '2025-12-29 10:37:52', '2025-12-31 09:58:11');
 INSERT INTO `users` VALUES (5, 'zhaoliu', '123456', 'recruitment_admin', '赵六', '13800138004', 'zhaoliu@edu.com', '2025-12-29 10:37:52', '2025-12-29 10:37:52');
+INSERT INTO `users` VALUES (6, 'testphone_dup', '123456', 'student', '重复手机号测试', '12345678912', 'new123@qq.com', '2025-12-31 09:39:17', '2025-12-31 09:39:17');
+INSERT INTO `users` VALUES (10, 'test_phone', '123456', 'student', NULL, '12345678913', '123@qq.com', '2025-12-31 09:45:11', '2025-12-31 09:45:11');
+INSERT INTO `users` VALUES (11, 'test_phone1', '123456', 'student', NULL, '12345678914', '1234@qq.com', '2025-12-31 09:46:01', '2025-12-31 09:46:01');
 
 SET FOREIGN_KEY_CHECKS = 1;

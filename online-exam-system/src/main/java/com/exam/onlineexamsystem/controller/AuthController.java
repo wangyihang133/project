@@ -4,6 +4,7 @@ import com.exam.onlineexamsystem.dto.LoginReq;
 import com.exam.onlineexamsystem.dto.LoginHistoryDto;
 import com.exam.onlineexamsystem.dto.LoginResp;
 import com.exam.onlineexamsystem.dto.RegisterReq;
+import com.exam.onlineexamsystem.security.TokenStore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +23,13 @@ public class AuthController {
     // 简单的内存用户存储（示例用途，生产请使用数据库和密码哈希）
     private final Map<String, String> passwordStore = new ConcurrentHashMap<>();
     private final Map<String, String> roleStore = new ConcurrentHashMap<>();
-    private final Map<String, String> tokenStore = new ConcurrentHashMap<>();
+    private final TokenStore tokenStore;
 
     private final JdbcTemplate jdbcTemplate;
 
-    public AuthController(JdbcTemplate jdbcTemplate) {
+    public AuthController(JdbcTemplate jdbcTemplate, TokenStore tokenStore) {
         this.jdbcTemplate = jdbcTemplate;
+        this.tokenStore = tokenStore;
         // 初始化一个默认管理员
         // 保留内存 map 仅作兼容（可逐步移除）
         passwordStore.put("admin", "123456");
@@ -42,16 +44,42 @@ public class AuthController {
         if (req.getPassword() == null || req.getPassword().length() < 6) {
             return ResponseEntity.badRequest().body("PASSWORD_TOO_SHORT");
         }
+        // basic phone validation: if provided must be 11 digits
+        if (req.getPhone() != null && !req.getPhone().isBlank()) {
+            if (!req.getPhone().matches("\\d{11}")) {
+                return ResponseEntity.badRequest().body("INVALID_PHONE");
+            }
+        }
+        // basic email validation: if provided must contain @ and .
+        if (req.getEmail() != null && !req.getEmail().isBlank()) {
+            if (!req.getEmail().matches("^\\S+@\\S+\\.\\S+$")) {
+                return ResponseEntity.badRequest().body("INVALID_EMAIL");
+            }
+        }
         try {
             Integer cnt = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM users WHERE username = ?", Integer.class, req.getUsername());
             if (cnt != null && cnt > 0) {
                 return ResponseEntity.status(409).body("用户名已存在");
             }
 
+            // ensure phone/email uniqueness when provided
+            if (req.getPhone() != null && !req.getPhone().isBlank()) {
+                Integer pcnt = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM users WHERE phone = ?", Integer.class, req.getPhone());
+                if (pcnt != null && pcnt > 0) {
+                    return ResponseEntity.status(409).body("PHONE_EXISTS");
+                }
+            }
+            if (req.getEmail() != null && !req.getEmail().isBlank()) {
+                Integer ecnt = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM users WHERE email = ?", Integer.class, req.getEmail());
+                if (ecnt != null && ecnt > 0) {
+                    return ResponseEntity.status(409).body("EMAIL_EXISTS");
+                }
+            }
+
             // server-side enforce new users as student (ignore client-provided role)
             String role = "student";
 
-            jdbcTemplate.update("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", req.getUsername(), req.getPassword(), role);
+            jdbcTemplate.update("INSERT INTO users (username, password, role, phone, email) VALUES (?, ?, ?, ?, ?)", req.getUsername(), req.getPassword(), role, req.getPhone(), req.getEmail());
             return ResponseEntity.ok("ok");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("注册失败");
@@ -87,10 +115,12 @@ public class AuthController {
             resp.setUsername(username);
             String roleDb = (String) row.get("role");
             // map DB role back to frontend role
+            // 重要：recruitment_admin 也包含 "admin" 字符串，不能用 contains("admin") 判断
             String roleOut = "STUDENT";
             if (roleDb != null) {
-                if (roleDb.toLowerCase().contains("admin")) roleOut = "ADMIN";
-                else if (roleDb.toLowerCase().contains("recruit")) roleOut = "RECRUIT";
+                String r = roleDb.trim().toLowerCase();
+                if ("system_admin".equals(r)) roleOut = "ADMIN";
+                else if ("recruitment_admin".equals(r)) roleOut = "RECRUIT";
                 else roleOut = "STUDENT";
             }
             resp.setRole(roleOut);
@@ -113,13 +143,13 @@ public class AuthController {
             return List.of();
         }
         String token = auth.substring("Bearer ".length()).trim();
-        String username = tokenStore.get(token);
+        String username = tokenStore.getUsername(token);
         if (username == null) return List.of();
 
         try {
             // determine role from users table (prefer DB truth)
             String role = jdbcTemplate.queryForObject("SELECT role FROM users WHERE username = ?", String.class, username);
-            boolean isAdmin = role != null && role.toLowerCase().contains("admin");
+            boolean isSystemAdmin = role != null && "system_admin".equalsIgnoreCase(role.trim());
 
             // build time filters
             java.sql.Timestamp startTs = null;
@@ -137,7 +167,7 @@ public class AuthController {
                 // ignore parse errors and treat as no filter
             }
 
-            if (isAdmin && all && (usernameParam == null || usernameParam.isBlank())) {
+            if (isSystemAdmin && all && (usernameParam == null || usernameParam.isBlank())) {
                 // admin requested all records (with optional time filters)
                 StringBuilder q = new StringBuilder("SELECT lh.id, lh.login_time, lh.ip_address, lh.user_agent, u.username FROM login_history lh JOIN users u ON lh.user_id = u.id");
                 StringBuilder where = new StringBuilder();
@@ -156,9 +186,9 @@ public class AuthController {
             }
 
             Integer userId = null;
-            if (isAdmin && userIdParam != null) {
+            if (isSystemAdmin && userIdParam != null) {
                 userId = userIdParam;
-            } else if (isAdmin && usernameParam != null && !usernameParam.isBlank()) {
+            } else if (isSystemAdmin && usernameParam != null && !usernameParam.isBlank()) {
                 // admin filters by username
                 userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username = ?", Integer.class, usernameParam);
             } else {
@@ -190,7 +220,7 @@ public class AuthController {
             return "no token";
         }
         String token = auth.substring("Bearer ".length()).trim();
-        if (tokenStore.remove(token) != null) {
+        if (tokenStore.remove(token)) {
             return "ok";
         }
         return "not found";
