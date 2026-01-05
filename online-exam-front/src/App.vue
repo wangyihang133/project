@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { computed, ref } from 'vue'
-import HelloWorld from './components/HelloWorld.vue'
 import { useUserStore } from './stores/user'
 import http from './api/http'
 
@@ -97,23 +96,12 @@ async function queryHistory(all = false) {
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
     <div class="top-right" v-if="isLoggedIn">
       <span class="user-name">{{ displayName }}</span>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
         <button class="logout-btn" @click="logout">退出登录</button>
         <button class="history-btn" @click="openHistory(false)">查询登录记录</button>
       </div>
-    </div>
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
     </div>
   </header>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import http from "@/api/http";
+import "../../assets/recruit.css";
 
 const status = ref("待确认");
 const list = ref<any[]>([]);
@@ -25,55 +26,74 @@ onMounted(load);
 </script>
 
 <template>
-  <div>
-    <h3>现场确认</h3>
-    <div style="margin:8px 0">
-      状态筛选：
-      <select v-model="status" @change="load">
-        <option>待确认</option>
-        <option>已确认</option>
-        <option>已驳回</option>
-      </select>
-      <button @click="load" style="margin-left:8px">刷新</button>
+  <div class="recruit-container">
+    <h3 class="recruit-title">现场确认</h3>
+    
+    <div class="recruit-card">
+      <div class="recruit-form-row">
+        <div class="recruit-form-group">
+          <label>状态筛选：</label>
+          <select v-model="status" @change="load" class="recruit-select">
+            <option>待确认</option>
+            <option>已确认</option>
+            <option>已驳回</option>
+          </select>
+        </div>
+        <div class="recruit-form-group" style="align-self: flex-end;">
+          <button @click="load" class="recruit-btn">刷新列表</button>
+        </div>
+      </div>
     </div>
 
-    <div v-if="error" style="color:#b00020">{{ error }}</div>
+    <div v-if="error" class="recruit-msg recruit-msg-error">{{ error }}</div>
 
-    <table v-if="list.length" border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:980px">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>考试ID</th>
-          <th>考试名称</th>
-          <th>考生</th>
-          <th>专业</th>
-          <th>年份</th>
-          <th>类型</th>
-          <th>联系方式</th>
-          <th>状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="a in list" :key="a.id">
-          <td>{{ a.id }}</td>
-          <td>{{ a.exam_id ?? "-" }}</td>
-          <td>{{ a.exam_name ?? "-" }}</td>
-          <td>{{ a.username }}</td>
-          <td>{{ a.major }}</td>
-          <td>{{ a.exam_year }}</td>
-          <td>{{ a.exam_type }}</td>
-          <td>{{ a.phone }} / {{ a.email }}</td>
-          <td>{{ a.status }}</td>
-          <td>
-            <button v-if="a.status==='待确认'" @click="confirm(a.id,true)">确认</button>
-            <button v-if="a.status==='待确认'" @click="confirm(a.id,false)" style="margin-left:6px">驳回</button>
-            <span v-else style="color:#666">-</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="recruit-card" v-if="list.length">
+      <table class="recruit-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>考试ID</th>
+            <th>考试名称</th>
+            <th>考生</th>
+            <th>专业</th>
+            <th>年份</th>
+            <th>类型</th>
+            <th>联系方式</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="a in list" :key="a.id">
+            <td>{{ a.id }}</td>
+            <td>{{ a.exam_id ?? "-" }}</td>
+            <td>{{ a.exam_name ?? "-" }}</td>
+            <td>{{ a.username }}</td>
+            <td>{{ a.major }}</td>
+            <td>{{ a.exam_year }}</td>
+            <td>{{ a.exam_type }}</td>
+            <td>{{ a.phone }} / {{ a.email }}</td>
+            <td>
+              <span :style="{ 
+                color: a.status === '已确认' ? '#28a745' : 
+                       a.status === '已驳回' ? '#dc3545' : '#ffc107',
+                fontWeight: '500'
+              }">
+                {{ a.status }}
+              </span>
+            </td>
+            <td>
+              <button v-if="a.status==='待确认'" @click="confirm(a.id,true)" class="recruit-btn recruit-btn-success">确认</button>
+              <button v-if="a.status==='待确认'" @click="confirm(a.id,false)" class="recruit-btn recruit-btn-danger" style="margin-left:6px">驳回</button>
+              <span v-else style="color:#999; font-size:12px">无需操作</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <div v-else style="color:#666">暂无数据</div>
+    <div v-else class="recruit-empty-state">
+      暂无申请数据
+    </div>
   </div>
 </template>

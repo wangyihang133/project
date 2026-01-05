@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import http from "@/api/http";
+import "../../assets/student-common.css"; // 引入通用样式
 
 // 筛选条件
 const filterYear = ref<number>(new Date().getFullYear());
 const filterType = ref("自主招生");
 const filterMajor = ref("");
-
 
 // 列表
 const myApps = ref<any[]>([]);
@@ -61,37 +61,31 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <h3>在线报名：</h3>
+  <div class="student-container">
+    <h3 class="student-title">在线报名</h3>
 
-    <div
-      style="border:1px solid #eee; border-radius:8px; padding:12px; max-width:720px; margin-bottom:12px"
-    >
-      <div style="font-weight:600; margin-bottom:8px">1. 选择考试（筛选条件）</div>
-      <div style="display:grid; grid-template-columns: 120px 1fr; gap:8px; max-width:520px">
+    <!-- 筛选区域 -->
+    <div class="student-filter-card">
+      <div style="font-weight:600; margin-bottom:12px">1. 选择考试（筛选条件）</div>
+      <div class="student-grid">
         <div>年份</div>
-        <input v-model.number="filterYear" type="number" />
+        <input v-model.number="filterYear" type="number" class="student-input" />
 
         <div>考试类型</div>
-        <input v-model="filterType" placeholder="如：自主招生" />
+        <input v-model="filterType" placeholder="如：自主招生" class="student-input" />
 
         <div>考试专业</div>
-        <input v-model="filterMajor" placeholder="如：计算机科学与技术" />
+        <input v-model="filterMajor" placeholder="如：计算机科学与技术" class="student-input" />
       </div>
-      <button @click="searchExams" style="margin-top:8px">筛选考试</button>
+      <button @click="searchExams" class="student-btn">筛选考试</button>
     </div>
 
-    <div style="margin-bottom:12px">
-      <div style="font-weight:600; margin-bottom:4px">2. 筛选结果：可报名的考试</div>
-      <div v-if="exams.length === 0" style="color:#666">暂无匹配的考试</div>
-      <table
-        v-else
-        border="1"
-        cellspacing="0"
-        cellpadding="4"
-        style="width:100%; max-width:900px; margin-top:4px; border-collapse:collapse; font-size:13px"
-      >
-        <thead style="background:#f5f5f5">
+    <!-- 筛选结果 -->
+    <div style="margin-bottom:20px">
+      <div style="font-weight:600; margin-bottom:8px; color:#2c3e50">2. 筛选结果：可报名的考试</div>
+      <div v-if="exams.length === 0" class="student-text-empty">暂无匹配的考试</div>
+      <table v-else class="student-table">
+        <thead>
           <tr>
             <th style="width:60px">ID</th>
             <th>名称</th>
@@ -111,23 +105,27 @@ onMounted(async () => {
             <td>{{ e.exam_time }}</td>
             <td>{{ e.candidate_count }}</td>
             <td>
-              <button @click="applyExam(e)">报名</button>
+              <button @click="applyExam(e)" class="student-btn" style="padding:4px 8px; font-size:12px">报名</button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div v-if="msg" style="color:#0a7a0a; margin-top:8px">{{ msg }}</div>
-    <div v-if="err" style="color:#b00020; margin-top:8px">{{ err }}</div>
+    <!-- 提示信息 -->
+    <div v-if="msg" class="student-text-success">{{ msg }}</div>
+    <div v-if="err" class="student-text-error">{{ err }}</div>
 
-    <h4 style="margin-top:18px">我的报名记录</h4>
-    <div v-if="myApps.length===0" style="color:#666">暂无记录</div>
-    <div v-for="a in myApps" :key="a.id" style="border:1px solid #eee; border-radius:8px; padding:10px; margin:8px 0">
-      <div>报名ID：{{ a.id }} ｜ 考试ID：{{ a.exam_id ?? '-' }}</div>
-      <div>状态：<b>{{ a.status }}</b></div>
-      <div style="color:#666; font-size:13px">报名时间：{{ a.application_time }}</div>
-      <div style="color:#666; font-size:13px">确认时间：{{ a.confirmation_time }}</div>
+    <!-- 报名记录 -->
+    <div style="margin-top:24px">
+      <h4 style="color:#2c3e50; margin-bottom:12px">我的报名记录</h4>
+      <div v-if="myApps.length===0" class="student-text-empty">暂无记录</div>
+      <div v-for="a in myApps" :key="a.id" class="student-item-card">
+        <div style="margin-bottom:4px">报名ID：{{ a.id }} ｜ 考试ID：{{ a.exam_id ?? '-' }}</div>
+        <div style="margin-bottom:4px">状态：<b style="color:#409eff">{{ a.status }}</b></div>
+        <div style="color:#909399; font-size:13px">报名时间：{{ a.application_time }}</div>
+        <div style="color:#909399; font-size:13px">确认时间：{{ a.confirmation_time }}</div>
+      </div>
     </div>
   </div>
 </template>

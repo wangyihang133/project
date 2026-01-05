@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import http from "@/api/http";
+import "../../assets/student-common.css"; // 引入通用样式
 
 const loading = ref(false);
 const items = ref<any[]>([]);
@@ -23,19 +24,20 @@ onMounted(load);
 </script>
 
 <template>
-  <div>
-    <h3>报考须知 / 公告</h3>
-    <div v-if="error" style="color:#b00020">{{ error }}</div>
-    <div v-if="loading">加载中...</div>
+  <div class="student-container">
+    <h3 class="student-title">报考须知 / 公告</h3>
+    
+    <div v-if="error" class="student-text-error">{{ error }}</div>
+    <div v-if="loading" class="student-loading">加载中...</div>
 
-    <div v-if="!loading && items.length === 0" style="color:#666">暂无公告</div>
+    <div v-if="!loading && items.length === 0" class="student-text-empty">暂无公告</div>
 
-    <div v-for="it in items" :key="it.id" style="border:1px solid #eee; border-radius:8px; padding:12px; margin:10px 0">
-      <div style="font-weight:600">{{ it.title }}</div>
-      <div style="color:#666; font-size:13px; margin:6px 0">
+    <div v-for="it in items" :key="it.id" class="student-item-card">
+      <div style="font-weight:600; color:#2c3e50; margin-bottom:8px">{{ it.title }}</div>
+      <div style="color:#909399; font-size:13px; margin-bottom:8px">
         发布人：{{ it.publish_by }} ｜ 发布时间：{{ it.publish_time }}
       </div>
-      <pre style="white-space:pre-wrap; margin:0">{{ it.content }}</pre>
+      <pre style="white-space:pre-wrap; margin:0; color:#606266; line-height:1.6">{{ it.content }}</pre>
     </div>
   </div>
 </template>

@@ -1,3 +1,7 @@
+
+import './assets/admin.css';
+import './assets/recruit.css';
+import './assets/student-common.css';
 import './assets/main.css'
 
 import { createApp } from 'vue'

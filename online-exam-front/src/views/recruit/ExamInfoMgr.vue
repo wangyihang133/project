@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import http from "@/api/http";
+import "../../assets/recruit.css";
 
 const items = ref<any[]>([]);
 const error = ref("");
@@ -46,34 +47,70 @@ onMounted(load);
 </script>
 
 <template>
-  <div>
-    <h3>招考信息维护</h3>
-    <div v-if="error" style="color:#b00020">{{ error }}</div>
+  <div class="recruit-container">
+    <h3 class="recruit-title">招考信息维护</h3>
+    
+    <div v-if="error" class="recruit-msg recruit-msg-error">{{ error }}</div>
 
-    <div style="border:1px solid #eee; border-radius:8px; padding:12px; max-width:760px; margin:10px 0">
-      <div style="font-weight:600; margin-bottom:8px">新增公告</div>
-      <input v-model="title" placeholder="标题" style="width:100%; margin:6px 0" />
-      <textarea v-model="content" placeholder="内容" style="width:100%; height:120px; margin:6px 0"></textarea>
-      <label style="margin-right:12px">
-        <input type="checkbox" v-model="isActive" true-value="1" false-value="0" />
-        立即启用
-      </label>
-      <button @click="add">发布</button>
+    <div class="recruit-card">
+      <h4 class="recruit-subtitle">新增公告</h4>
+      <div class="recruit-form-group" style="margin-bottom: 16px;">
+        <input v-model="title" placeholder="请输入公告标题" class="recruit-input" />
+      </div>
+      <div class="recruit-form-group" style="margin-bottom: 16px;">
+        <textarea v-model="content" placeholder="请输入公告内容" style="width:100%; height:160px; padding:12px; border:1px solid #ddd; border-radius:4px; font-size:14px; font-family: inherit;" />
+      </div>
+      <div class="recruit-form-row">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" v-model="isActive" true-value="1" false-value="0" />
+          立即启用
+        </label>
+        <button @click="add" class="recruit-btn">发布公告</button>
+      </div>
     </div>
 
-    <div v-for="it in items" :key="it.id" style="border:1px solid #eee; border-radius:8px; padding:12px; margin:10px 0">
-      <div style="display:flex; justify-content:space-between; gap:12px">
-        <div style="font-weight:600">{{ it.title }}</div>
-        <div style="white-space:nowrap; color:#666">状态：{{ it.is_active ? "启用" : "停用" }}</div>
+    <div v-if="items.length">
+      <h4 class="recruit-subtitle">公告列表</h4>
+      <div v-for="it in items" :key="it.id" class="recruit-card" style="margin-bottom: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+          <div>
+            <div style="font-weight:600; font-size:16px; color:#333; margin-bottom:4px;">{{ it.title }}</div>
+            <div style="color:#666; font-size:13px;">
+              发布人：{{ it.publish_by }} ｜ 发布时间：{{ it.publish_time }}
+            </div>
+          </div>
+          <div :style="{ 
+            padding: '4px 12px', 
+            borderRadius: '12px', 
+            fontSize: '12px',
+            fontWeight: '500',
+            backgroundColor: it.is_active ? '#d4edda' : '#f8d7da',
+            color: it.is_active ? '#155724' : '#721c24'
+          }">
+            {{ it.is_active ? "启用中" : "已停用" }}
+          </div>
+        </div>
+        <div style="
+          white-space: pre-wrap;
+          margin: 0;
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: 6px;
+          font-size: 14px;
+          line-height: 1.6;
+          color: #333;
+        ">{{ it.content }}</div>
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+          <button @click="toggle(it)" :class="['recruit-btn', it.is_active ? 'recruit-btn-danger' : 'recruit-btn-success']">
+            {{ it.is_active ? "停用公告" : "启用公告" }}
+          </button>
+          <button @click="remove(it.id)" class="recruit-btn recruit-btn-danger">删除公告</button>
+        </div>
       </div>
-      <div style="color:#666; font-size:13px; margin:6px 0">
-        发布人：{{ it.publish_by }} ｜ 发布时间：{{ it.publish_time }}
-      </div>
-      <pre style="white-space:pre-wrap; margin:0">{{ it.content }}</pre>
-      <div style="margin-top:8px">
-        <button @click="toggle(it)">{{ it.is_active ? "停用" : "启用" }}</button>
-        <button @click="remove(it.id)" style="margin-left:8px">删除</button>
-      </div>
+    </div>
+    
+    <div v-else class="recruit-empty-state">
+      暂无招考信息
     </div>
   </div>
 </template>

@@ -62,6 +62,12 @@ body {
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-background);
+  /* 新增背景图片属性 */
+  background-image: url('./images/back3.jpg'); /* 替换为你的图片路径 */
+  background-repeat: no-repeat; /* 禁止图片重复 */
+  background-size: cover; /* 让图片覆盖整个页面（可选，根据需求调整） */
+  background-position: center center; /* 图片居中显示 */
+  background-attachment: fixed; /* 固定背景，滚动页面时不移动（可选） */
   transition:
     color 0.5s,
     background-color 0.5s;

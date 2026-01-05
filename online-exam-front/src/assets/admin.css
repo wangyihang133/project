@@ -1,0 +1,14 @@
+/* admin.css */
+.admin-container {
+  width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+/* 响应式适配（可选） */
+@media (max-width: 1200px) {
+  .admin-container {
+    width: 95%;
+    padding: 16px;
+  }
+}

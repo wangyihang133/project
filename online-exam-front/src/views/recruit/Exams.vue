@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import http from "@/api/http";
+import "../../assets/recruit.css";
 
 const list = ref<any[]>([]);
 const error = ref("");
 
 const examName = ref("");
 const examType = ref("");
-const examTime = ref(""); // 使用 datetime-local 字符串
+const examTime = ref("");
 const examMajor = ref("");
 const candidateCount = ref<number | null>(null);
 const remarks = ref("");
@@ -33,21 +34,18 @@ async function createExam() {
   saving.value = true;
   error.value = "";
   try {
-    // datetime-local 默认格式为 yyyy-MM-ddTHH:mm，后端会把 T 替换成空格再解析
     const payload = {
       exam_name: examName.value,
       exam_type: examType.value,
-      exam_time: examTime.value + ":00", // 补秒成 yyyy-MM-ddTHH:mm:ss
+      exam_time: examTime.value + ":00",
       exam_major: examMajor.value,
       candidate_count: candidateCount.value ?? 0,
       remarks: remarks.value,
     };
 
     if (editingId.value == null) {
-      // 新增
       await http.post("/recruit/exams", payload);
     } else {
-      // 编辑
       await http.put(`/recruit/exams/${editingId.value}`, payload);
     }
     examName.value = "";
@@ -71,7 +69,6 @@ function startEdit(it: any) {
   examType.value = it.exam_type || "";
   examMajor.value = it.exam_major || "";
   candidateCount.value = typeof it.candidate_count === "number" ? it.candidate_count : null;
-  // 兼容 "yyyy-MM-dd HH:mm:ss" 或 "yyyy-MM-ddTHH:mm:ss"，转为 datetime-local 需要到分钟
   if (it.exam_time) {
     let t = String(it.exam_time);
     t = t.replace(" ", "T");
@@ -102,54 +99,66 @@ onMounted(load);
 </script>
 
 <template>
-  <div>
-    <h3>考试设置</h3>
-    <div v-if="error" style="color:#b00020">{{ error }}</div>
+  <div class="recruit-container">
+    <h3 class="recruit-title">考试设置</h3>
+    
+    <div v-if="error" class="recruit-msg recruit-msg-error">{{ error }}</div>
 
-    <div
-      style="border:1px solid #eee; border-radius:8px; padding:12px; max-width:820px; margin:10px 0"
-    >
-      <div style="font-weight:600; margin-bottom:8px">
+    <div class="recruit-card">
+      <h4 class="recruit-subtitle">
         {{ editingId == null ? "新增考试" : `编辑考试（ID：${editingId}）` }}
+      </h4>
+      
+      <div class="recruit-form-row">
+        <div class="recruit-form-group">
+          <label>考试名称</label>
+          <input v-model="examName" placeholder="请输入考试名称" class="recruit-input" />
+        </div>
+        <div class="recruit-form-group">
+          <label>考试类型</label>
+          <input v-model="examType" placeholder="如：笔试/面试" class="recruit-input" />
+        </div>
+        <div class="recruit-form-group">
+          <label>考试专业</label>
+          <input v-model="examMajor" placeholder="如：计算机科学与技术" class="recruit-input" />
+        </div>
       </div>
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px">
-        <input v-model="examName" placeholder="考试名称" style="flex:1 1 160px" />
-        <input v-model="examType" placeholder="考试类型（如 笔试/面试）" style="flex:1 1 160px" />
-        <input
-          v-model="examMajor"
-          placeholder="考试专业（如 计算机科学与技术）"
-          style="flex:1 1 200px"
-        />
+      
+      <div class="recruit-form-row">
+        <div class="recruit-form-group">
+          <label>考试时间</label>
+          <input v-model="examTime" type="datetime-local" class="recruit-input" />
+        </div>
+        <div class="recruit-form-group">
+          <label>预计考生人数</label>
+          <input v-model.number="candidateCount" type="number" min="0" placeholder="请输入人数" class="recruit-input" />
+        </div>
       </div>
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px">
-        <label style="display:flex; align-items:center; gap:4px">
-          <span>考试时间</span>
-          <input v-model="examTime" type="datetime-local" />
-        </label>
-        <input
-          v-model.number="candidateCount"
-          type="number"
-          min="0"
-          placeholder="预计考生人数"
-          style="flex:0 0 160px"
-        />
+      
+      <div class="recruit-form-group">
+        <label>备注</label>
+        <textarea v-model="remarks" placeholder="请输入备注信息（可选）" style="width:100%; height:80px; padding:12px; border:1px solid #ddd; border-radius:4px; font-size:14px; font-family: inherit;" />
       </div>
-      <textarea
-        v-model="remarks"
-        placeholder="备注（可选）"
-        style="width:100%; height:80px; margin:6px 0"
-      ></textarea>
-      <button @click="createExam" :disabled="saving">
-        {{ saving ? "保存中..." : editingId == null ? "保存考试" : "更新考试" }}
-      </button>
-      <button v-if="editingId != null" @click="cancelEdit" style="margin-left:8px">取消编辑</button>
+      
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button @click="createExam" :disabled="saving" class="recruit-btn">
+          {{ saving ? "保存中..." : editingId == null ? "保存考试" : "更新考试" }}
+        </button>
+        <button v-if="editingId != null" @click="cancelEdit" class="recruit-btn" style="background-color: #6c757d;">
+          取消编辑
+        </button>
+      </div>
     </div>
 
-    <div style="margin-top:16px">
-      <h4>已配置考试</h4>
-      <div v-if="!list.length" style="color:#666; margin-top:6px">暂无考试记录</div>
-      <table v-else border="1" cellspacing="0" cellpadding="4" style="width:100%; max-width:900px; margin-top:8px; border-collapse:collapse; font-size:13px">
-        <thead style="background:#f5f5f5">
+    <div class="recruit-card" style="margin-top: 24px;">
+      <h4 class="recruit-subtitle">已配置考试</h4>
+      
+      <div v-if="!list.length" class="recruit-empty-state">
+        暂无考试记录
+      </div>
+      
+      <table v-else class="recruit-table">
+        <thead>
           <tr>
             <th style="width:60px">ID</th>
             <th>名称</th>
@@ -158,22 +167,25 @@ onMounted(load);
             <th>时间</th>
             <th>考生人数</th>
             <th>备注</th>
-            <th style="width:110px">操作</th>
+            <th style="width:140px">操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="it in list" :key="it.id">
             <td>{{ it.id }}</td>
-            <td>{{ it.exam_name }}</td>
+            <td style="font-weight: 500;">{{ it.exam_name }}</td>
             <td>{{ it.exam_type }}</td>
             <td>{{ it.exam_major }}</td>
             <td>{{ it.exam_time }}</td>
             <td>{{ it.candidate_count }}</td>
             <td>{{ it.remarks }}</td>
-            <td>
-              <button @click="startEdit(it)">编辑</button>
-              
-              <button @click="removeExam(it.id)">删除</button>
+            <td style="display: flex; gap: 6px;">
+              <button @click="startEdit(it)" class="recruit-btn" style="padding: 6px 12px; font-size: 13px;">
+                编辑
+              </button>
+              <button @click="removeExam(it.id)" class="recruit-btn recruit-btn-danger" style="padding: 6px 12px; font-size: 13px;">
+                删除
+              </button>
             </td>
           </tr>
         </tbody>

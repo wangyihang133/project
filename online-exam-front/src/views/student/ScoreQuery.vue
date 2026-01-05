@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import http from "@/api/http";
 import { useUserStore } from "@/stores/user";
+import "../../assets/student-common.css"; // 引入通用样式
 
 const userStore = useUserStore();
 
@@ -89,68 +90,71 @@ onMounted(query);
 </script>
 
 <template>
-  <div>
-    <h3>成绩查询（按报名ID，可筛选考试和时间）</h3>
+  <div class="student-container">
+    <h3 class="student-title">成绩查询（按报名ID，可筛选考试和时间）</h3>
 
-    <div
-      style="border:1px solid #eee; border-radius:8px; padding:12px; max-width:720px; margin-bottom:12px"
-    >
-      <div style="font-weight:600; margin-bottom:8px">查询条件</div>
-      <div style="display:grid; grid-template-columns: 120px 1fr; gap:8px; max-width:520px">
+    <!-- 查询条件 -->
+    <div class="student-filter-card">
+      <div style="font-weight:600; margin-bottom:12px">查询条件</div>
+      <div class="student-grid">
         <div>报名ID</div>
-        <input v-model="applicationId" placeholder="如：在报名记录中看到的ID" />
+        <input v-model="applicationId" placeholder="如：在报名记录中看到的ID" class="student-input" />
 
         <div>考试年份</div>
-        <input v-model.number="examYear" type="number" placeholder="可选" />
+        <input v-model.number="examYear" type="number" placeholder="可选" class="student-input" />
 
         <div>考试类型</div>
-        <input v-model="examType" placeholder="如：自主招生，留空为不限" />
+        <input v-model="examType" placeholder="如：自主招生，留空为不限" class="student-input" />
 
         <div>成绩录入时间从</div>
-        <input v-model="fromDate" type="date" />
+        <input v-model="fromDate" type="date" class="student-input" />
 
         <div>成绩录入时间到</div>
-        <input v-model="toDate" type="date" />
+        <input v-model="toDate" type="date" class="student-input" />
       </div>
-      <button @click="query" style="margin-top:8px">查询成绩</button>
+      <button @click="query" class="student-btn">查询成绩</button>
     </div>
 
-    <div v-if="error" style="color:#b00020; margin-top:8px">{{ error }}</div>
-    <div v-if="loading" style="margin-top:8px">加载中...</div>
+    <!-- 提示信息 -->
+    <div v-if="error" class="student-text-error">{{ error }}</div>
+    <div v-if="loading" class="student-loading">加载中...</div>
 
+    <!-- 多组成绩展示 -->
     <div v-if="!loading && groups && groups.length">
-      <div style="margin-top:10px">用户：{{ userStore.username || '-' }}</div>
-      <div style="margin-top:8px">
-        <div v-for="g in groups" :key="g.applicationId" style="border:1px solid #eee; padding:8px; margin-bottom:8px">
-          <div>报名ID：<b>{{ g.applicationId }}</b> &nbsp; 总分：<b>{{ g.total }}</b></div>
-
-          <table v-if="g.scores && g.scores.length" border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:720px; margin-top:8px">
-            <thead>
-              <tr>
-                <th>科目</th>
-                <th>分数</th>
-                <th>录入时间</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="s in g.scores" :key="s.id">
-                <td>{{ s.subject }}</td>
-                <td>{{ s.score }}</td>
-                <td>{{ s.entry_time }}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div v-else style="color:#666; margin-top:8px">暂无成绩（管理员尚未录入）</div>
+      <div style="margin-bottom:12px; color:#606266">用户：{{ userStore.username || '-' }}</div>
+      <div v-for="g in groups" :key="g.applicationId" class="student-item-card">
+        <div style="margin-bottom:8px">
+          <span style="color:#2c3e50">报名ID：<b>{{ g.applicationId }}</b></span>
+          <span style="margin-left:16px; color:#2c3e50">总分：<b>{{ g.total }}</b></span>
         </div>
+
+        <table v-if="g.scores && g.scores.length" class="student-table">
+          <thead>
+            <tr>
+              <th>科目</th>
+              <th>分数</th>
+              <th>录入时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="s in g.scores" :key="s.id">
+              <td>{{ s.subject }}</td>
+              <td>{{ s.score }}</td>
+              <td>{{ s.entry_time }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-else class="student-text-empty">暂无成绩（管理员尚未录入）</div>
       </div>
     </div>
 
+    <!-- 单条成绩展示 -->
     <div v-else-if="!loading && data">
-      <div style="margin-top:10px">报名ID：{{ data.applicationId ?? "暂无" }}</div>
-      <div style="margin:6px 0">总分：<b>{{ data.total }}</b></div>
+      <div style="margin-bottom:8px; color:#606266">报名ID：{{ data.applicationId ?? "暂无" }}</div>
+      <div style="margin-bottom:12px; color:#2c3e50">总分：<b>{{ data.total }}</b></div>
 
-      <table v-if="data.scores && data.scores.length" border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:720px">
+      <table v-if="data.scores && data.scores.length" class="student-table">
         <thead>
           <tr>
             <th>科目</th>
@@ -167,7 +171,7 @@ onMounted(query);
         </tbody>
       </table>
 
-      <div v-else style="color:#666; margin-top:8px">暂无成绩（管理员尚未录入）</div>
+      <div v-else class="student-text-empty">暂无成绩（管理员尚未录入）</div>
     </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import http from "@/api/http";
+import "../../assets/recruit.css";
 
 const userId = ref<number | null>(null);
 const password = ref("");
@@ -22,16 +23,31 @@ async function submit() {
 </script>
 
 <template>
-  <div>
-    <h3>学生密码重置</h3>
-    <div style="display:grid; grid-template-columns:140px 1fr; gap:8px; max-width:520px">
-      <div>学生用户ID（users.id）</div>
-      <input v-model.number="userId" type="number" />
-      <div>新密码</div>
-      <input v-model="password" type="password" placeholder="至少 6 位" />
+  <div class="recruit-container">
+    <h3 class="recruit-title">学生密码重置</h3>
+    
+    <div class="recruit-card">
+      <div class="recruit-form-row">
+        <div class="recruit-form-group">
+          <label>学生用户ID（users.id）</label>
+          <input v-model.number="userId" type="number" class="recruit-input" placeholder="请输入用户ID" />
+        </div>
+        <div class="recruit-form-group">
+          <label>新密码</label>
+          <input v-model="password" type="password" class="recruit-input" placeholder="至少6位字符" />
+        </div>
+      </div>
+      
+      <div style="margin-top: 24px;">
+        <button @click="submit" class="recruit-btn">提交重置</button>
+      </div>
+      
+      <div v-if="msg" class="recruit-msg recruit-msg-success" style="margin-top: 20px;">
+        {{ msg }}
+      </div>
+      <div v-if="err" class="recruit-msg recruit-msg-error" style="margin-top: 20px;">
+        {{ err }}
+      </div>
     </div>
-    <button @click="submit" style="margin-top:12px">提交</button>
-    <div v-if="msg" style="color:#0a7a0a; margin-top:8px">{{ msg }}</div>
-    <div v-if="err" style="color:#b00020; margin-top:8px">{{ err }}</div>
   </div>
 </template>
