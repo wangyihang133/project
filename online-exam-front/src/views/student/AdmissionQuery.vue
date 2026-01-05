@@ -12,15 +12,96 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
+    // 如果没有登录用户名，视为未查询 -> 显示为空列表而不是错误
+    if (!userStore?.username) {
+      groups.value = [];
+      return;
+    }
+
     // 方案B：传递当前登录用户的username，使用新的安全端点
     const res = await http.get("/student/scores/by-application-username", {
       params: { username: userStore.username }
     });
     // 打印返回结果，确认是数组
     console.log("scores grouped res:", res.data);
-    groups.value = res.data || [];
+      const data = res.data || [];
+
+      // 使用当前登录用户名做客户端过滤，防止后端未按用户名筛选而返回全部成绩
+      const username = userStore?.username?.toString()?.trim();
+      let filtered = Array.isArray(data) ? data : [];
+
+      if (username) {
+        if (filtered[0] && filtered[0].scores) {
+          // 已分组结构：保留与 username 相关的组（尽可能多的字段匹配）
+          filtered = filtered.filter((g: any) => {
+            if (!g) return false;
+            if (g.username === username) return true;
+            if (g.application && (g.application.username === username || g.application.userName === username)) return true;
+            if (g.scores && g.scores.some((s: any) => s.username === username || s.user?.username === username)) return true;
+            return false;
+          });
+        } else {
+          // 扁平记录：按可能的字段匹配 username
+          filtered = filtered.filter((s: any) => {
+            if (!s) return false;
+            if (s.username === username) return true;
+            if (s.user && (s.user.username === username || s.userName === username)) return true;
+            if (s.application && (s.application.username === username || s.application.userName === username)) return true;
+            if (s.applicantUsername === username || s.studentUsername === username) return true;
+            return false;
+          });
+        }
+
+        // 如果后台返回了很多记录但过滤后为空，说明后端未按用户过滤——不要展示全量数据
+        if (filtered.length === 0 && Array.isArray(data) && data.length > 0) {
+          groups.value = [];
+          error.value = "";
+          return;
+        }
+      }
+
+      if (!Array.isArray(filtered) || filtered.length === 0) {
+        groups.value = [];
+      } else if (filtered[0] && filtered[0].scores) {
+        // already grouped by backend (and possibly filtered)
+        groups.value = filtered;
+      } else {
+        // backend returned flat list of score records -> group by applicationId
+        const map = new Map<any, any>();
+        filtered.forEach((s: any) => {
+          const aid = s.applicationId ?? (s.application && s.application.id) ?? "unknown";
+          if (!map.has(aid)) {
+            map.set(aid, {
+              applicationId: aid,
+              applicationStatus: s.applicationStatus ?? null,
+              examName: s.examName ?? null,
+              examType: s.examType ?? null,
+              major: s.major ?? s.examMajor ?? null,
+              examTime: s.examTime ?? null,
+              applicationTime: s.applicationTime ?? null,
+              admissionStatus: s.admissionStatus ?? null,
+              minScore: s.minScore ?? null,
+              scores: [],
+              total: 0,
+            });
+          }
+          const g = map.get(aid);
+          g.scores.push({ id: s.id, subject: s.subject, score: s.score, entryTime: s.entryTime });
+          g.total = (Number(g.total) || 0) + (Number(s.score) || 0);
+        });
+        groups.value = Array.from(map.values());
+      }
   } catch (e: any) {
-    error.value = e?.response?.data || "加载失败";
+    const status = e?.response?.status;
+    // 对于常见的“无数据”响应（400/404），不要显示错误信息，改为显示空列表
+    if (status === 400 || status === 404) {
+      groups.value = [];
+      error.value = "";
+    } else {
+      // 优化错误信息显示：优先使用后端返回的 message 字段
+      const data = e?.response?.data;
+      error.value = (data && (data.message || data)) || e?.message || "加载失败";
+    }
   } finally {
     loading.value = false;
   }
