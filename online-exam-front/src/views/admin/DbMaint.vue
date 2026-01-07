@@ -34,7 +34,7 @@ async function cleanup() {
 <template>
   <div class="admin-container">
     <div class="page-header">
-      <h3>数据库维护（简化版）</h3>
+      <h3>数据库维护</h3>
     </div>
 
     <div class="action-panel">

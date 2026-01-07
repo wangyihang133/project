@@ -92,7 +92,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="recruit-container">
+  <div>
     <h3 class="recruit-title">设置录取分数线</h3>
 
     <div class="recruit-card">
@@ -150,7 +150,7 @@ onMounted(async () => {
               <td>{{ e.exam_time }}</td>
               <td>{{ e.exam_major }}</td>
               <td>
-                <button @click="chooseExam(e)" class="recruit-btn recruit-btn-success" style="padding: 6px 12px; font-size: 13px;">
+                <button @click="chooseExam(e)" class="recruit-btn recruit-btn-success">
                   选中
                 </button>
               </td>
@@ -194,7 +194,7 @@ onMounted(async () => {
       </div>
       
       <div style="margin-top: 24px;">
-        <button @click="submit" class="recruit-btn" style="padding: 10px 24px; font-size: 15px;">
+        <button @click="submit" class="recruit-btn recruit-btn-lg">
           设置分数线
         </button>
       </div>

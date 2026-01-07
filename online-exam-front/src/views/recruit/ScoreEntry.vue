@@ -27,7 +27,7 @@ async function submit() {
 </script>
 
 <template>
-  <div class="recruit-container">
+  <div>
     <h3 class="recruit-title">成绩录入</h3>
     
     <div class="recruit-card">
@@ -47,7 +47,7 @@ async function submit() {
       </div>
       
       <div style="margin-top: 24px;">
-        <button @click="submit" class="recruit-btn" style="padding: 10px 24px; font-size: 15px;">
+        <button @click="submit" class="recruit-btn recruit-btn-lg">
           提交成绩
         </button>
       </div>

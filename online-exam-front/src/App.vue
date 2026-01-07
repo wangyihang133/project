@@ -98,9 +98,9 @@ async function queryHistory(all = false) {
   <header>
     <div class="top-right" v-if="isLoggedIn">
       <span class="user-name">{{ displayName }}</span>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <div class="top-right-actions">
         <button class="logout-btn" @click="logout">退出登录</button>
-        <button class="history-btn" @click="openHistory(false)">查询登录记录</button>
+        <button class="history-btn primary" @click="openHistory(false)">查询登录记录</button>
       </div>
     </div>
   </header>
@@ -109,40 +109,42 @@ async function queryHistory(all = false) {
 
   <aside v-if="showHistory" class="history-drawer">
     <div class="history-drawer-inner">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>登录记录</h3>
-        <div>
-          <button class="close-btn" @click="showHistory = false">关闭</button>
-        </div>
+      <div class="history-header">
+        <h3 class="history-title">登录记录</h3>
+        <button class="close-btn" @click="showHistory = false">关闭</button>
       </div>
 
-      <section style="margin-top:12px;border-bottom:1px solid #eee;padding-bottom:12px">
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px">开始时间</label>
-            <input type="datetime-local" v-model="startTime" />
-            <label style="font-size:12px">结束时间</label>
-            <input type="datetime-local" v-model="endTime" />
+      <section class="history-filter">
+        <div class="history-filter-body">
+          <div class="history-row">
+            <label class="history-label">开始时间</label>
+            <input type="datetime-local" v-model="startTime" class="history-input" />
+            <label class="history-label">结束时间</label>
+            <input type="datetime-local" v-model="endTime" class="history-input" />
           </div>
 
-          <div v-if="isAdmin" style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px">管理员选项</label>
+          <div v-if="isAdmin" class="history-row">
+            <label class="history-label">管理员选项</label>
             <input type="checkbox" v-model="historyQueryAll" />
-            <span style="font-size:12px">查询所有用户</span>
+            <span class="history-tip">查询所有用户</span>
           </div>
 
-          <div v-if="isAdmin" style="display:flex;gap:8px;align-items:center">
-            <input v-model="filterUsername" placeholder="按用户名筛选（管理员）" style="padding:6px;border:1px solid var(--color-border);border-radius:4px;flex:1" />
-            <button class="history-btn" @click="queryByUsername">按用户名查询</button>
+          <div v-if="isAdmin" class="history-row">
+            <input
+              v-model="filterUsername"
+              placeholder="按用户名筛选（管理员）"
+              class="history-input history-input--full"
+            />
+            <button class="history-btn primary" @click="queryByUsername">按用户名查询</button>
           </div>
 
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="history-btn" @click="queryHistory(historyQueryAll)">查询</button>
+          <div class="history-actions">
+            <button class="history-btn primary" @click="queryHistory(historyQueryAll)">查询</button>
             <button class="history-btn" @click="clearFilters">清除</button>
           </div>
         </div>
       </section>
-      <table>
+      <table class="history-table">
         <thead>
           <tr>
             <th>时间</th>
@@ -236,29 +238,50 @@ nav a:first-of-type {
   align-items: center;
 }
 
+.top-right-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
 .user-name {
   font-size: 14px;
   color: var(--color-text);
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.9);
 }
 
 .logout-btn {
-  background: transparent;
+  background: #ffffff;
   border: 1px solid var(--color-border);
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 16px;
   cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  background: var(--color-border);
+  background: #edf2f7;
 }
 
 .history-btn {
-  background: transparent;
+  background: #ffffff;
   border: 1px solid var(--color-border);
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 16px;
   cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.history-btn.primary {
+  background: #4299e1;
+  color: #ffffff;
+  border-color: #4299e1;
 }
 
 .history-modal {
@@ -299,10 +322,114 @@ nav a:first-of-type {
 }
 
 .history-drawer-inner {
-  background: #fff;
+  background: rgba(255,255,255,0.96);
   width: 100%;
-  padding: 16px;
-  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+  padding: 18px 18px 16px;
+  box-shadow: -6px 0 18px rgba(0,0,0,0.18);
   overflow: auto;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.history-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.close-btn {
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  background: #edf2f7;
+}
+
+.history-filter {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.history-filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.history-label {
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.history-tip {
+  font-size: 12px;
+  color: #718096;
+}
+
+.history-input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.history-input--full {
+  flex: 1;
+}
+
+.history-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.history-table th,
+.history-table td {
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+}
+
+.history-table thead {
+  background-color: #f5f7fa;
+}
+
+.history-table tbody tr:nth-child(odd) {
+  background-color: #fdfdfd;
+}
+
+.history-table tbody tr:hover {
+  background-color: #f1f5f9;
 }
 </style>

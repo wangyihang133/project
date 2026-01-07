@@ -1,21 +1,74 @@
 <template>
-  <div style="padding: 24px; max-width: 360px; margin: 0 auto">
-    <h2>注册</h2>
-    <input v-model="username" placeholder="用户名" style="width: 100%; margin: 8px 0" />
-    <input v-model="password" @input="clearMsg" type="password" placeholder="密码" style="width: 100%; margin: 8px 0" />
-    <input v-model="confirmPassword" @input="clearMsg" type="password" placeholder="确认密码" style="width: 100%; margin: 8px 0" />
-    <input v-model="phone" @input="clearMsg" placeholder="电话" style="width: 100%; margin: 8px 0" />
-    <input v-model="email" @input="clearMsg" placeholder="邮箱" style="width: 100%; margin: 8px 0" />
+  <div class="register-container">
+    <div class="register-card">
+      <h2 class="register-title">用户注册</h2>
 
-    <!-- 注册默认为考生，移除角色选择 -->
+      <div class="input-group">
+        <label class="input-label" for="username">用户名</label>
+        <input
+          id="username"
+          v-model="username"
+          @input="clearMsg"
+          placeholder="请输入用户名"
+          class="input-field"
+        />
+      </div>
 
-    <div v-if="errorMessage" style="color:#b00020;margin:8px 0">{{ errorMessage }}</div>
-    <div v-if="successMessage" style="color:#0b8043;margin:8px 0">{{ successMessage }}</div>
-    <button @click="register" style="width: 100%; margin-top: 8px">注册</button>
+      <div class="input-group">
+        <label class="input-label" for="password">密码</label>
+        <input
+          id="password"
+          v-model="password"
+          @input="clearMsg"
+          type="password"
+          placeholder="请输入密码（至少6位）"
+          class="input-field"
+        />
+      </div>
 
-    <p style="margin-top: 12px">
-      已有账号？<RouterLink to="/login">去登录</RouterLink>
-    </p>
+      <div class="input-group">
+        <label class="input-label" for="confirmPassword">确认密码</label>
+        <input
+          id="confirmPassword"
+          v-model="confirmPassword"
+          @input="clearMsg"
+          type="password"
+          placeholder="请再次输入密码"
+          class="input-field"
+        />
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="phone">电话</label>
+        <input
+          id="phone"
+          v-model="phone"
+          @input="clearMsg"
+          placeholder="选填：11位手机号"
+          class="input-field"
+        />
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="email">邮箱</label>
+        <input
+          id="email"
+          v-model="email"
+          @input="clearMsg"
+          placeholder="选填：常用邮箱"
+          class="input-field"
+        />
+      </div>
+
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
+
+      <button @click="register" class="register-btn">注册</button>
+
+      <div class="login-link">
+        已有账号？<RouterLink to="/login" class="link-text">去登录</RouterLink>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -115,3 +168,145 @@ const register = async () => {
   }
 }
 </script>
+
+<style scoped>
+.register-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 10;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 380px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 28px 24px 24px;
+  box-sizing: border-box;
+}
+
+.register-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3748;
+  text-align: center;
+}
+
+.input-group {
+  margin-bottom: 14px;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+  background-color: rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.12);
+  background-color: #ffffff;
+}
+
+.input-field::placeholder {
+  color: #a0aec0;
+}
+
+.error-message {
+  color: #e53e3e;
+  margin: 4px 0 8px 0;
+  font-size: 13px;
+  padding: 8px 10px;
+  background-color: rgba(229, 62, 62, 0.08);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+.success-message {
+  color: #38a169;
+  margin: 4px 0 8px 0;
+  font-size: 13px;
+  padding: 8px 10px;
+  background-color: rgba(56, 161, 105, 0.08);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+.register-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px;
+  background-color: #4299e1;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.register-btn:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 14px rgba(49, 130, 206, 0.35);
+}
+
+.login-link {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #718096;
+  text-align: center;
+}
+
+.link-text {
+  color: #4299e1;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.link-text:hover {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .register-card {
+    padding: 24px 20px 20px;
+  }
+
+  .register-title {
+    font-size: 18px;
+  }
+}
+</style>

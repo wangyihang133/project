@@ -99,7 +99,7 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="recruit-container">
+  <div>
     <h3 class="recruit-title">考试设置</h3>
     
     <div v-if="error" class="recruit-msg recruit-msg-error">{{ error }}</div>

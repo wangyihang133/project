@@ -23,7 +23,7 @@ async function submit() {
 </script>
 
 <template>
-  <div class="recruit-container">
+  <div>
     <h3 class="recruit-title">学生密码重置</h3>
     
     <div class="recruit-card">

@@ -259,7 +259,7 @@ public class RecruitController {
         if (status == null || status.isBlank()) status = req.isApprove() ? "已确认" : "已驳回";
         jdbcTemplate.update("UPDATE applications SET status = ?, confirmation_time = ?, confirmed_by = ? WHERE id = ?",
                 status, Timestamp.valueOf(LocalDateTime.now()), ctx.getUserId(), id);
-        log(ctx.getUserId(), "现场确认: applicationId=" + id + ", status=" + status, request);
+        log(ctx.getUserId(), "报名审核: applicationId=" + id + ", status=" + status, request);
         return ResponseEntity.ok("OK");
     }
 

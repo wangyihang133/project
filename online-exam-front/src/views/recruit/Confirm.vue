@@ -26,8 +26,8 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="recruit-container">
-    <h3 class="recruit-title">现场确认</h3>
+  <div>
+    <h3 class="recruit-title">报名审核</h3>
     
     <div class="recruit-card">
       <div class="recruit-form-row">

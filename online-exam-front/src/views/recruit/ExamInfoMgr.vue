@@ -47,7 +47,7 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="recruit-container">
+  <div>
     <h3 class="recruit-title">招考信息维护</h3>
     
     <div v-if="error" class="recruit-msg recruit-msg-error">{{ error }}</div>
